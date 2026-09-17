@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Obra{% endblock %}
+
+{% block content %}
+{# Fase 5: texto completo rolável + quadro de tópicos/resumo para o professor #}
+<h1>Página da obra: {{ slug }}</h1>
+
+<section class="obra-texto">
+    <p>Texto completo da obra (placeholder).</p>
+</section>
+
+<aside class="obra-topicos">
+    <h2>Tópicos para o professor</h2>
+    <p>Resumo/quadro de tópicos (placeholder).</p>
+</aside>
+
+<nav class="obra-acoes">
+    <a href="{% url 'avaliacoes:avaliacao' slug %}">Avaliação</a>
+    <a href="{% url 'quiz:quiz' slug %}">Quiz</a>
+    <a href="{% url 'quiz:resultado' slug %}">Relatório de desempenho</a>
+</nav>
+{% endblock %}

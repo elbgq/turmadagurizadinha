@@ -1,0 +1,29 @@
+# Ambiente virtual
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Django
+db.sqlite3
+db.sqlite3-3
+media/*
+!media/.gitkeep
+staticfiles/
+
+# Variáveis de ambiente / segredos
+.env
+
+# Editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

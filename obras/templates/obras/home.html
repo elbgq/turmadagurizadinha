@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Turma da Gurizadinha — Início{% endblock %}
+
+{% block content %}
+<h1>Obras</h1>
+
+{# Fase 5: grade de cards (4 ou 6 colunas), cada card com ilustração + texto estilo blog #}
+<div class="obras-grid">
+    {% for obra in obras %}
+        <article class="obra-card">
+            <a href="{% url 'obras:detalhe' obra.slug %}">{{ obra.titulo }}</a>
+        </article>
+    {% empty %}
+        <p>Nenhuma obra cadastrada ainda. Elas aparecerão aqui a partir da Fase 4 (modelos) e da Fase 9 (carga das 30 obras).</p>
+    {% endfor %}
+</div>
+{% endblock %}
