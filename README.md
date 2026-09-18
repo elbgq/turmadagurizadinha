@@ -2,7 +2,7 @@
 
 Site com conteúdo de obras infantis ilustradas, criado para uso de professores como material didático. Contará inicialmente com 30 histórias publicadas; cada obra disponibiliza texto completo, tópicos/resumo para uso em sala de aula, questões sobre o conteúdo (versão impressa e interativa) e um quiz com temporizador, pontuação e relatório de desempenho para o professor.
 
-Stack: **Python + Django**, banco **SQLite** em desenvolvimento, front-end em templates Django (HTML/CSS/JS).
+Stack: **Python + Django 5.2 (LTS)**, banco **SQLite** em desenvolvimento, front-end em templates Django (HTML/CSS/JS).
 
 ## Estrutura do projeto
 
@@ -19,12 +19,16 @@ turmadagurizadinha/
 ├── media/                    # uploads (ilustrações das obras — Fase 4)
 ├── manage.py
 ├── requirements.txt
+├── .env                       # segredos locais (não versionado — copie de .env.example)
+├── .env.example                # modelo do .env, versionado, sem valores reais
 └── .vscode/                  # configuração pronta para depurar no VS Code
 ```
 
 Cada app tem seus próprios `templates/<app>/`, `models.py`, `views.py`, `urls.py`, `admin.py` e `migrations/`, seguindo o padrão do Django — isso facilita desenvolver e testar cada módulo do projeto de forma isolada. Não existe um app dedicado só a relatórios; foi avaliado e descartado por não haver, no momento, nenhuma lógica que precise viver fora do app `quiz`.
 
 **Controle de acesso (decisão atualizada):** toda a plataforma passou a exigir login — público em geral, alunos e professores incluídos, todos com autocadastro aberto (nome, e-mail, senha) pelo app `contas`. A equipe da cliente continua usando o Django Admin separadamente, com conta de staff. Com isso, o relatório de desempenho do quiz deixou de ficar só na sessão do navegador: agora cada tentativa é gravada em banco, vinculada à conta do usuário logado (model `ResultadoQuiz`, no app `quiz`), permitindo ver histórico ao longo do tempo. *(Isso substitui o desenho anterior descrito nos comentários de `quiz/views.py`, que ainda precisa ser atualizado na Fase 4.)*
+
+**Segurança e versão do Django (atualização):** o projeto foi atualizado do Django 5.1 (suporte de segurança encerrado em 31/12/2025) para o **Django 5.2 LTS** (suporte de segurança até abr/2028). O `SECRET_KEY` deixou de ter um valor fixo versionado no `settings.py`: agora ele é lido de um arquivo `.env` local (não versionado — carregado via `python-dotenv`), com `.env.example` servindo de modelo no repositório. Em desenvolvimento, se o `.env` não existir, o projeto ainda roda com uma chave gerada na hora (só localmente); em produção (`DEBUG=False`), a variável de ambiente passa a ser obrigatória — configurada diretamente no servidor na Fase 10, nunca no repositório.
 
 ## Como rodar pela primeira vez (Windows / VS Code)
 
@@ -38,20 +42,26 @@ Cada app tem seus próprios `templates/<app>/`, `models.py`, `views.py`, `urls.p
    ```powershell
    pip install -r requirements.txt
    ```
+   > Se o seu `venv` já existia antes desta atualização (Django 5.1 → 5.2 LTS + `python-dotenv`), rode `pip install -r requirements.txt --upgrade` para atualizar os pacotes já instalados.
 4. No VS Code, selecione o interpretador Python do `venv` (`Ctrl+Shift+P` → *Python: Select Interpreter* → escolha o que está em `venv\Scripts\python.exe`).
-5. Aplique as migrações iniciais e crie um super usuário para o Django Admin:
+5. Crie o seu `.env` local a partir do modelo (o `.env` já vem pronto neste projeto com uma chave gerada para você; se precisar gerar uma nova, copie `.env.example` para `.env` e rode):
+   ```powershell
+   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+   ```
+   Cole o valor gerado em `DJANGO_SECRET_KEY` dentro do `.env`. Esse arquivo não é versionado (ver `.gitignore`).
+6. Aplique as migrações iniciais e crie um super usuário para o Django Admin:
    ```powershell
    python manage.py migrate
    python manage.py createsuperuser
    ```
-6. Suba o servidor de desenvolvimento:
+7. Suba o servidor de desenvolvimento:
    ```powershell
    python manage.py runserver
    ```
    Acesse http://127.0.0.1:8000/ (site) e http://127.0.0.1:8000/admin/ (admin).
 
    Ou use *Run and Debug* (F5) no VS Code — já existe uma configuração pronta em `.vscode/launch.json` ("Django: runserver").
-7. Inicialize o repositório Git (se ainda não tiver feito):
+8. Inicialize o repositório Git (se ainda não tiver feito) — o `.env` fica de fora automaticamente, graças ao `.gitignore`:
    ```powershell
    git init
    git add .
