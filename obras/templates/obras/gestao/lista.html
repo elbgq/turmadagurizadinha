@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Gerenciar obras{% endblock %}
+
+{% block content %}
+<h1>Gerenciar obras</h1>
+<p><a class="btn" href="{% url 'obras:obra_nova' %}">+ Nova obra</a></p>
+
+<table class="tabela-gestao">
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Publicada</th>
+            <th>Ordem</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for obra in obras %}
+            <tr>
+                <td>{{ obra.titulo }}</td>
+                <td>{% if obra.publicada %}Sim{% else %}Não{% endif %}</td>
+                <td>{{ obra.ordem }}</td>
+                <td>
+                    <a href="{% url 'obras:obra_editar' obra.pk %}">Editar</a>
+                    {% if perms.obras.delete_obra %}
+                        · <a href="{% url 'obras:obra_excluir' obra.pk %}">Excluir</a>
+                    {% endif %}
+                    {% if obra.publicada %}
+                        · <a href="{% url 'obras:detalhe' obra.slug %}">Ver página</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">Nenhuma obra cadastrada ainda.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

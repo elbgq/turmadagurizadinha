@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{% if obra %}Editar obra{% else %}Nova obra{% endif %}{% endblock %}
+
+{% block content %}
+<h1>{% if obra %}Editar obra: {{ obra.titulo }}{% else %}Nova obra{% endif %}</h1>
+
+{% for message in messages %}<p class="mensagem">{{ message }}</p>{% endfor %}
+
+<form class="form form--obra" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        {% if field.name == "slug" %}
+            {{ field }}
+        {% else %}
+            <div class="form__campo">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {{ field.errors }}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    {% if formset %}
+        <h2>Atividades de apoio (perguntas)</h2>
+        <p>Cadastre o enunciado de cada pergunta aqui. As alternativas de cada uma são gerenciadas separadamente, depois de salvar.</p>
+        {{ formset.management_form }}
+        {% for questao_form in formset %}
+            <fieldset class="form__questao">
+                {{ questao_form.id }}
+                {{ questao_form.non_field_errors }}
+                {% if not questao_form.instance.pk %}
+                    <p class="form__novo-enunciado">Novo enunciado</p>
+                {% endif %}
+                <div class="form__campo">
+                    <div class="form__campo-cabecalho">
+                        <label for="{{ questao_form.enunciado.id_for_label }}">Enunciado</label>
+                        {% if questao_form.instance.pk %}
+                            <span class="form__ordem-valor">Ordem: {{ questao_form.instance.ordem }}</span>
+                        {% endif %}
+                    </div>
+                    {{ questao_form.enunciado }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ questao_form.ordem.id_for_label }}">Ordem</label>
+                    {{ questao_form.ordem }}
+                </div>
+                {% if questao_form.instance.pk %}
+                    <p><a href="{% url 'obras:questao_alternativas' questao_form.instance.pk %}">Gerenciar alternativas ({{ questao_form.instance.alternativas.count }})</a></p>
+                {% else %}
+                    <p><small>Salve a obra para poder cadastrar as alternativas desta pergunta.</small></p>
+                {% endif %}
+                {% if questao_form.DELETE %}
+                    <label class="form__excluir">{{ questao_form.DELETE }} Excluir esta pergunta</label>
+                {% endif %}
+            </fieldset>
+        {% endfor %}
+    {% endif %}
+
+    <button type="submit" class="btn">Salvar</button>
+</form>
+
+<p><a href="{% url 'obras:obra_lista' %}">← Voltar para a lista</a></p>
+{% endblock %}

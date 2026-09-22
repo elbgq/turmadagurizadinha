@@ -1,42 +1,25 @@
 from django.shortcuts import render
 
-# Chave de sessão usada para guardar o resultado do quiz entre o momento em
-# que o aluno termina de responder e a tela de resultado (ver
-# quiz_resultado abaixo). Sem login e sem histórico salvo em banco —
-# decisão do projeto: o relatório de desempenho é exibido na hora.
-CHAVE_SESSAO_RESULTADO = "quiz_resultado::{slug}"
+# Fase 7 (planejado): PerguntaQuiz/AlternativaQuiz e a lógica de
+# temporizador, pontuação e navegação entre perguntas. O resultado de
+# cada tentativa será gravado em ResultadoQuiz (Fase 4, já implementado
+# em quiz/models.py), vinculado ao Perfil da pessoa logada e à Obra —
+# login já é obrigatório em toda a plataforma, então isso substitui o
+# desenho antigo (resultado só na sessão do navegador, sem histórico).
 
 
 def quiz_obra(request, obra_slug):
     """
     Fase 7: Módulo de Quiz — temporizador, pontuação e relatório de
     desempenho para o professor.
-
-    TODO (Fase 7): ao final do quiz (última pergunta respondida ou tempo
-    esgotado), gravar o resultado na sessão e redirecionar para a tela de
-    resultado, por exemplo:
-
-        request.session[CHAVE_SESSAO_RESULTADO.format(slug=obra_slug)] = {
-            "pontuacao": pontuacao,
-            "total": total_perguntas,
-            "tempo_segundos": tempo_gasto,
-        }
-        return redirect("quiz:resultado", obra_slug=obra_slug)
     """
     return render(request, "quiz/quiz.html", {"obra_slug": obra_slug})
 
 
 def quiz_resultado(request, obra_slug):
     """
-    Relatório de desempenho do quiz: exibido logo após o término das
-    respostas, para quem está aplicando o quiz naquele momento — sem
-    login de professor e sem histórico salvo (decisão do projeto).
+    Relatório de desempenho do quiz. A partir da Fase 7, esta view passa
+    a consultar ResultadoQuiz (histórico por conta) em vez da sessão do
+    navegador.
     """
-    resultado = request.session.get(CHAVE_SESSAO_RESULTADO.format(slug=obra_slug))
-
-    contexto = {
-        "obra_slug": obra_slug,
-        "resultado": resultado,
-        "tem_resultado": bool(resultado),
-    }
-    return render(request, "quiz/resultado.html", contexto)
+    return render(request, "quiz/resultado.html", {"obra_slug": obra_slug})

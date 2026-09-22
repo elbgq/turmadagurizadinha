@@ -58,10 +58,9 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").sp
 
 # Apps do projeto Turma da Gurizadinha (ver README.md para o mapeamento com as fases)
 LOCAL_APPS = [
-    "contas",      # Fase 4: autocadastro, login e logout (login obrigatório em todo o site)
-    "obras",       # Fase 5: Home e Página da Obra (texto, tópicos, ilustrações)
-    "avaliacoes",  # Fase 6: Módulo de Avaliações (impressa e interativa)
-    "quiz",        # Fase 7: Módulo de Quiz (temporizador, pontuação, relatório de desempenho)
+    "contas",  # Fase 4: autocadastro, login e logout (login obrigatório em todo o site)
+    "obras",   # Fase 5: Home, Página da Obra, atividades de apoio para impressão (Questao/Alternativa)
+    "quiz",    # Fase 7: Módulo de Quiz (temporizador, pontuação, relatório de desempenho)
 ]
 
 INSTALLED_APPS = [
@@ -81,6 +80,12 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Fase 4: login obrigatório em toda a plataforma — público em geral,
+    # alunos e professores incluídos. Só as views marcadas com
+    # @login_not_required (contas:login e contas:cadastro) ficam de fora.
+    # O próprio Django Admin já cuida do login dele mesmo, sem precisar de
+    # marcação especial (ver contas/urls.py).
+    "django.contrib.auth.middleware.LoginRequiredMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -162,4 +167,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+LOGIN_URL = "contas:login"
 LOGIN_REDIRECT_URL = "obras:home"
+LOGOUT_REDIRECT_URL = "obras:home"

@@ -3,8 +3,11 @@ URL configuration for config project (Turma da Gurizadinha).
 
 Cada app tem seu próprio urls.py, incluído aqui com um prefixo e um
 namespace. Isso mantém as rotas organizadas conforme os módulos do
-projeto (obras, avaliações, quiz). O relatório de desempenho do quiz
-é uma rota dentro do próprio app "quiz" (ver quiz/urls.py).
+projeto (contas, obras, quiz). O app "avaliacoes" foi removido: as
+questões/alternativas (impressão de atividades de apoio) agora vivem
+dentro do próprio app "obras" (ver obras/models.py e obras/views.py) —
+não é mais uma rota própria. O relatório de desempenho do quiz é uma
+rota dentro do próprio app "quiz" (ver quiz/urls.py).
 """
 
 from django.conf import settings
@@ -16,7 +19,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("contas/", include("contas.urls")),
     path("", include("obras.urls")),
-    path("avaliacoes/", include("avaliacoes.urls")),
     path("quiz/", include("quiz.urls")),
 ]
 

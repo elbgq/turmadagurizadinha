@@ -1,3 +1,28 @@
 <nav class="navbar">
     <a href="{% url 'obras:home' %}" class="navbar__brand">Turma da Gurizadinha</a>
+
+    {# Fase 5: itens institucionais (Quem somos, A Turminha) entram aqui. #}
+    {# Controle de acesso (contas): menu do usuário logado — Django Admin #}
+    {# (só staff), troca de senha e sair — ou links de entrar/cadastrar. #}
+    {% if request.user.is_authenticated %}
+        <div class="navbar__menu">
+            <span class="navbar__usuario">{{ request.user.first_name|default:request.user.email }}</span>
+            {% if perms.obras.view_obra %}
+                <a href="{% url 'obras:obra_lista' %}">Gerenciar obras</a>
+            {% endif %}
+            {% if request.user.is_staff %}
+                <a href="{% url 'admin:index' %}">Admin</a>
+            {% endif %}
+            <a href="{% url 'contas:trocar_senha' %}">Trocar senha</a>
+            <form method="post" action="{% url 'contas:logout' %}" class="navbar__sair">
+                {% csrf_token %}
+                <button type="submit">Sair</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="navbar__menu">
+            <a href="{% url 'contas:login' %}">Entrar</a>
+            <a href="{% url 'contas:cadastro' %}">Cadastre-se</a>
+        </div>
+    {% endif %}
 </nav>

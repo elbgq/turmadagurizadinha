@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Criar conta{% endblock %}
+
+{% block content %}
+<h1>Criar conta</h1>
+<p>O acesso à plataforma exige login. Qualquer pessoa pode se cadastrar — público em geral, aluno ou professor.</p>
+
+<form class="form" method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        <div class="form__campo">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+    <button type="submit" class="btn">Criar conta</button>
+</form>
+
+<p>Já tem conta? <a href="{% url 'contas:login' %}">Entrar</a></p>
+{% endblock %}

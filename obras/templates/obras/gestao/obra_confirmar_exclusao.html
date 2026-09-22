@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Excluir obra{% endblock %}
+
+{% block content %}
+<h1>Excluir obra</h1>
+<p>Tem certeza que deseja excluir "<strong>{{ obra.titulo }}</strong>"? Isso também apaga as perguntas e alternativas cadastradas para ela. Essa ação não pode ser desfeita.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--perigo">Sim, excluir</button>
+    <a class="btn btn--ghost" href="{% url 'obras:obra_lista' %}">Cancelar</a>
+</form>
+{% endblock %}

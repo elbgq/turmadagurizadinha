@@ -1,8 +1,34 @@
+from django.contrib.auth.models import User
 from django.db import models
 
-# Create your models here.
-#
-# Fase 4 (planejado): model Perfil, ligado 1-1 ao User do Django, com um
-# campo "tipo" (professor / aluno / outro). Login passa a ser obrigatório
-# em toda a plataforma, com autocadastro aberto para qualquer pessoa; a
-# equipe da cliente continua usando o Django Admin, à parte deste app.
+
+class Perfil(models.Model):
+    """
+    Dados extras do usuário do Django, ligados 1 para 1 ao model User
+    padrão. Login obrigatório em toda a plataforma, com autocadastro
+    aberto (ver contas/views.py); o "tipo" é autodeclarado no cadastro,
+    sem verificação — serve para eventuais ajustes de UI no futuro (ex.:
+    mensagens diferentes para professor), não é um controle de permissão.
+
+    O e-mail é o identificador de login: o campo username do User guarda
+    o próprio e-mail (ver forms.CadastroForm).
+    """
+
+    PROFESSOR = "professor"
+    ALUNO = "aluno"
+    OUTRO = "outro"
+    TIPO_CHOICES = [
+        (PROFESSOR, "Professor(a)"),
+        (ALUNO, "Aluno(a)"),
+        (OUTRO, "Outro"),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="perfil")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default=OUTRO)
+
+    class Meta:
+        verbose_name = "Perfil"
+        verbose_name_plural = "Perfis"
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.email} ({self.get_tipo_display()})"

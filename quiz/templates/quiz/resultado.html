@@ -3,18 +3,5 @@
 
 {% block content %}
 <h1>Relatório de desempenho</h1>
-
-{% if not tem_resultado %}
-    <p>Ainda não há resultado de quiz para esta obra nesta sessão.</p>
-{% else %}
-    <div class="relatorio">
-        <section class="relatorio__bloco">
-            <h2>Quiz</h2>
-            <p>Pontuação: {{ resultado.pontuacao }} / {{ resultado.total }}</p>
-            <p>Tempo: {{ resultado.tempo_segundos }}s</p>
-        </section>
-    </div>
-
-    <button class="relatorio__imprimir" onclick="window.print()">Imprimir relatório</button>
-{% endif %}
+<p>Módulo de quiz (placeholder) — a partir da Fase 7, mostra aqui o histórico de tentativas desta obra (model ResultadoQuiz, já implementado na Fase 4).</p>
 {% endblock %}

@@ -1,22 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Obra{% endblock %}
+{% block title %}{{ obra.titulo }}{% endblock %}
 
 {% block content %}
-{# Fase 5: texto completo rolável + quadro de tópicos/resumo para o professor #}
-<h1>Página da obra: {{ slug }}</h1>
+{# Fase 5: layout completo (colunas, tipografia) fica para depois; #}
+{# aqui os dados já vêm do model Obra (Fase 4). #}
+<h1>{{ obra.titulo }}</h1>
+{% if obra.texto_breve %}<p class="obra-texto-breve">{{ obra.texto_breve }}</p>{% endif %}
+
+{% if obra.capa %}<img class="obra-capa" src="{{ obra.capa.url }}" alt="Capa de {{ obra.titulo }}" />{% endif %}
 
 <section class="obra-texto">
-    <p>Texto completo da obra (placeholder).</p>
+    <p>{{ obra.texto_completo|linebreaks }}</p>
 </section>
 
 <aside class="obra-topicos">
     <h2>Tópicos para o professor</h2>
-    <p>Resumo/quadro de tópicos (placeholder).</p>
+    <p>{{ obra.topicos_resumo|linebreaks }}</p>
 </aside>
 
+<section class="obra-atividades">
+    <h2>Atividades de apoio para impressão</h2>
+    {% for questao in questoes %}
+        <div class="obra-atividades__questao">
+            <p>{{ forloop.counter }}. {{ questao.enunciado }}</p>
+            <ul class="obra-atividades__opcoes">
+                {% for alternativa in questao.alternativas.all %}
+                    <li>{{ alternativa.texto }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% empty %}
+        <p>Nenhuma atividade cadastrada para esta obra ainda.</p>
+    {% endfor %}
+    <button class="obra-atividades__imprimir" onclick="window.print()">Imprimir atividades</button>
+</section>
+
 <nav class="obra-acoes">
-    <a href="{% url 'avaliacoes:avaliacao' slug %}">Avaliação</a>
-    <a href="{% url 'quiz:quiz' slug %}">Quiz</a>
-    <a href="{% url 'quiz:resultado' slug %}">Relatório de desempenho</a>
+    <a href="{% url 'quiz:quiz' obra.slug %}">Quiz</a>
+    <a href="{% url 'quiz:resultado' obra.slug %}">Relatório de desempenho</a>
 </nav>
 {% endblock %}

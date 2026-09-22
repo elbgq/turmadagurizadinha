@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Entrar{% endblock %}
+
+{% block content %}
+<h1>Entrar</h1>
+
+<form class="form" method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        <div class="form__campo">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn">Entrar</button>
+</form>
+
+<p>Ainda não tem conta? <a href="{% url 'contas:cadastro' %}">Cadastre-se</a></p>
+{% endblock %}

@@ -1,7 +1,27 @@
-from django.shortcuts import render
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_not_required
+from django.shortcuts import redirect, render
 
-# Fase 4 (planejado): views de autocadastro, login e logout. Login passa a
-# ser obrigatório em toda a plataforma (público em geral, alunos e
-# professores), com autocadastro aberto — só as rotas deste app ficam de
-# fora do portão de login. A maior parte pode reaproveitar as views prontas
-# do django.contrib.auth (LoginView, LogoutView); falta só a de cadastro.
+from .forms import CadastroForm
+
+
+@login_not_required
+def cadastro(request):
+    """
+    Autocadastro aberto — a única rota, junto com o login, que fica fora
+    do portão de login obrigatório (ver LoginRequiredMiddleware em
+    config/settings.py). Ao cadastrar, a pessoa já entra logada.
+    """
+    if request.user.is_authenticated:
+        return redirect("obras:home")
+
+    if request.method == "POST":
+        form = CadastroForm(request.POST)
+        if form.is_valid():
+            usuario = form.save()
+            login(request, usuario)
+            return redirect("obras:home")
+    else:
+        form = CadastroForm()
+
+    return render(request, "contas/cadastro.html", {"form": form})

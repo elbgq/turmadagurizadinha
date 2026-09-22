@@ -27,3 +27,5 @@ staticfiles/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+Claude outputs/*

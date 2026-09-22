@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Alternativas{% endblock %}
+
+{% block content %}
+<h1>Alternativas — {{ questao.enunciado }}</h1>
+<p>Obra: {{ questao.obra.titulo }}. Marque qual alternativa é a correta (não aparece para quem imprime as atividades).</p>
+
+<form class="form form--alternativas" method="post" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% for alt_form in formset %}
+        <fieldset class="form__alternativa">
+            {{ alt_form.id }}
+            {{ alt_form.non_field_errors }}
+            <div class="form__campo">
+                <label for="{{ alt_form.texto.id_for_label }}">Texto</label>
+                {{ alt_form.texto }}
+            </div>
+            <label class="form__correta">{{ alt_form.correta }} Correta</label>
+            {% if alt_form.DELETE %}
+                <label class="form__excluir">{{ alt_form.DELETE }} Excluir</label>
+            {% endif %}
+        </fieldset>
+    {% endfor %}
+    <button type="submit" class="btn">Salvar alternativas</button>
+</form>
+
+<p><a href="{% url 'obras:obra_editar' questao.obra_id %}">← Voltar para a obra</a></p>
+{% endblock %}

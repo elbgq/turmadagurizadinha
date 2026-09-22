@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Trocar senha{% endblock %}
+
+{% block content %}
+<h1>Trocar senha</h1>
+
+<form class="form" method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        <div class="form__campo">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+    <button type="submit" class="btn">Salvar nova senha</button>
+</form>
+{% endblock %}
