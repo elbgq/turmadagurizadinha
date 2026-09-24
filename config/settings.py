@@ -101,6 +101,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "contas.context_processors.tema_ativo",
             ],
         },
     },
@@ -170,3 +171,28 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "contas:login"
 LOGIN_REDIRECT_URL = "obras:home"
 LOGOUT_REDIRECT_URL = "obras:home"
+
+
+# E-mail (Fase 4: "esqueci minha senha", ver contas/urls.py) — configurado
+# por variáveis de ambiente no .env (ver .env.example), igual ao
+# DJANGO_SECRET_KEY acima. Funciona com qualquer provedor SMTP (Gmail com
+# "senha de app", Brevo, SendGrid, Mailgun etc.) — só trocar as variáveis.
+#
+# Sem EMAIL_HOST_USER configurado (.env local, antes de escolher um
+# provedor), os e-mails são só impressos no terminal (console) — dá para
+# testar o fluxo de redefinição de senha sem precisar configurar nada
+# ainda.
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend"
+    if os.environ.get("EMAIL_HOST_USER")
+    else "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL", "Turma da Gurizadinha <nao-responda@turmadagurizadinha.com.br>"
+)

@@ -13,6 +13,9 @@
             {% if request.user.is_staff %}
                 <a href="{% url 'admin:index' %}">Admin</a>
             {% endif %}
+            {% if request.user.is_superuser %}
+                <a href="{% url 'contas:tema' %}">Tema</a>
+            {% endif %}
             <a href="{% url 'contas:trocar_senha' %}">Trocar senha</a>
             <form method="post" action="{% url 'contas:logout' %}" class="navbar__sair">
                 {% csrf_token %}

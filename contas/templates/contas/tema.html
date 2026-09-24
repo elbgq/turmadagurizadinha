@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Tema do site{% endblock %}
+
+{% block content %}
+<h1>Tema do site</h1>
+<p>Escolha as cores usadas em todo o site (menu, rodapé, botões e cartões das obras). Só o superusuário vê e altera esta tela.</p>
+
+{% for message in messages %}<p class="mensagem">{{ message }}</p>{% endfor %}
+
+<form method="post" class="form form--tema">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="tema-opcoes">
+        {% for radio in form.tema %}
+            <label class="tema-opcao tema-opcao--{{ radio.data.value }}">
+                {{ radio.tag }}
+                <span class="tema-opcao__amostra"></span>
+                {{ radio.choice_label }}
+            </label>
+        {% endfor %}
+    </div>
+    <button type="submit" class="btn">Salvar tema</button>
+</form>
+{% endblock %}

@@ -1,15 +1,30 @@
 /* Estilos base — Turma da Gurizadinha
    Ajustar conforme os wireframes definidos na Fase 1. */
 
+/* Variáveis de cor do tema ativo (ver static/css/temas/) — valores aqui
+   são o fallback "Atual", usados só se o CSS do tema não carregar. O
+   base.html sempre carrega este arquivo primeiro e o do tema depois,
+   então o tema é quem decide os valores finais. Mudança de ESTRUTURA
+   (layout, espaçamento) é feita só aqui; os arquivos de tema só
+   redefinem estas três variáveis. */
+:root {
+    --cor-destaque: #ffcc4d;
+    --cor-fundo: #fffdf6;
+    --cor-card: #fff6df;
+}
+
 * {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     font-family: "Segoe UI", Verdana, sans-serif;
     color: #333;
-    background: #fffdf6;
+    background: var(--cor-fundo);
 }
 
 .navbar {
@@ -17,7 +32,7 @@ body {
     gap: 1.5rem;
     align-items: center;
     padding: 1rem 2rem;
-    background: #ffcc4d;
+    background: var(--cor-destaque);
 }
  
 .navbar__brand {
@@ -92,7 +107,7 @@ body {
     padding: 0.6rem 1.2rem;
     border: none;
     border-radius: 999px;
-    background: #ffcc4d;
+    background: var(--cor-destaque);
     color: #333;
     font-weight: bold;
     cursor: pointer;
@@ -172,6 +187,56 @@ body {
     padding: 0.6rem 1rem;
 }
 
+/* Variante para avisos de erro (ex.: link de redefinição de senha
+   inválido/expirado — contas/templates/contas/senha_redefinir.html). */
+.mensagem--erro {
+    background: #fbe9e7;
+    border-color: #f3b5ab;
+    color: #8a2c20;
+}
+
+/* Tela "Tema do site" (contas/views.py, superusuário) — cada opção
+   mostra uma amostra da cor de destaque daquele tema. As cores aqui são
+   fixas de propósito (não usam var(--cor-destaque)): a tela precisa
+   mostrar a amostra de TODOS os temas, não só do que está ativo agora. */
+.tema-opcoes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.tema-opcao {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+}
+
+.tema-opcao__amostra {
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    display: inline-block;
+}
+
+.tema-opcao--atual .tema-opcao__amostra {
+    background: #ffcc4d;
+}
+
+.tema-opcao--verde .tema-opcao__amostra {
+    background: #81da9e;
+}
+
+.tema-opcao--azul .tema-opcao__amostra {
+    background: #85bae0;
+}
+
+.tema-opcao--bordo .tema-opcao__amostra {
+    background: #e29cae;
+}
+
 .tabela-gestao {
     width: 100%;
     border-collapse: collapse;
@@ -184,10 +249,40 @@ body {
     border-bottom: 1px solid #eee;
 }
 
+/* Linhas intercaladas — mesma cor do fundo do template e o tom pastel
+   usado no .obra-card, para facilitar a leitura da tabela. */
+.tabela-gestao tbody tr:nth-child(odd) {
+    background: var(--cor-fundo);
+}
+
+.tabela-gestao tbody tr:nth-child(even) {
+    background: var(--cor-card);
+}
+
 .container {
     max-width: 1100px;
     margin: 0 auto;
     padding: 2rem;
+    flex: 1 0 auto;
+}
+
+/* Rodapé — sempre grudado ao fim da tela (ver body/.container acima),
+   mesmo fundo do navbar. */
+.footer {
+    flex-shrink: 0;
+    background: var(--cor-destaque);
+    padding: 1rem 2rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #333;
+}
+
+.footer__linha {
+    margin: 0.25rem 0;
+}
+
+.footer__contato a {
+    color: #333;
 }
 
 .obras-grid {
@@ -201,11 +296,19 @@ body {
         grid-template-columns: repeat(2, 1fr);
     }
 }
-
+ 
 .obra-card {
-    border: 1px solid #eee;
+    border: 1px solid var(--cor-destaque);
     border-radius: 8px;
     padding: 1rem;
+    background: var(--cor-card);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.obra-card:hover {
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
 }
 
 /* Página da obra (detalhe.html) — capa em tamanho maior. Sem isso, uma
@@ -266,6 +369,7 @@ body {
 
 @media print {
     .navbar,
+    .footer,
     .relatorio__imprimir {
         display: none;
     }

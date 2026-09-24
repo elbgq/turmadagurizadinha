@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Entrar{% endblock %}
+{% block title %}Esqueci minha senha{% endblock %}
 
 {% block content %}
-<h1>Entrar</h1>
+<h1>Esqueci minha senha</h1>
+<p>Informe o e-mail cadastrado. Se ele existir na plataforma, enviaremos um link para você redefinir a senha.</p>
 
 <form class="form" method="post" novalidate>
     {% csrf_token %}
@@ -14,10 +15,8 @@
             {{ field.errors }}
         </div>
     {% endfor %}
-    <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit" class="btn">Entrar</button>
+    <button type="submit" class="btn">Enviar link de redefinição</button>
 </form>
 
-<p><a href="{% url 'contas:senha_esqueci' %}">Esqueceu a senha?</a></p>
-<p>Ainda não tem conta? <a href="{% url 'contas:cadastro' %}">Cadastre-se</a></p>
+<p><a href="{% url 'contas:login' %}">Voltar para o login</a></p>
 {% endblock %}

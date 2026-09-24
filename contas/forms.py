@@ -1,9 +1,9 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from .models import Perfil
+from .models import ConfiguracaoSite, Perfil
 
 
 class CadastroForm(forms.Form):
@@ -52,3 +52,16 @@ class EmailAuthenticationForm(AuthenticationForm):
     """
 
     username = forms.CharField(label="E-mail", widget=forms.EmailInput(attrs={"autofocus": True}))
+
+
+class EmailPasswordResetForm(PasswordResetForm):
+    """Mesma lógica do PasswordResetForm padrão, só troca o rótulo do campo para "E-mail"."""
+
+    email = forms.EmailField(label="E-mail", widget=forms.EmailInput(attrs={"autofocus": True}))
+
+
+class TemaForm(forms.ModelForm):
+    class Meta:
+        model = ConfiguracaoSite
+        fields = ["tema"]
+        widgets = {"tema": forms.RadioSelect}

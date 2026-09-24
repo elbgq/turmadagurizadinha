@@ -3,7 +3,9 @@
 
 {% block content %}
 <h1>Gerenciar obras</h1>
-<p><a class="btn" href="{% url 'obras:obra_nova' %}">+ Nova obra</a></p>
+{% if perms.obras.add_obra %}
+    <p><a class="btn" href="{% url 'obras:obra_nova' %}">+ Nova obra</a></p>
+{% endif %}
 
 <table class="tabela-gestao">
     <thead>
@@ -11,7 +13,7 @@
             <th>Título</th>
             <th>Publicada</th>
             <th>Ordem</th>
-            <th></th>
+            <th>Ações</th>
         </tr>
     </thead>
     <tbody>
@@ -21,7 +23,9 @@
                 <td>{% if obra.publicada %}Sim{% else %}Não{% endif %}</td>
                 <td>{{ obra.ordem }}</td>
                 <td>
-                    <a href="{% url 'obras:obra_editar' obra.pk %}">Editar</a>
+                    {% if perms.obras.change_obra %}
+                        <a href="{% url 'obras:obra_editar' obra.pk %}">Editar</a>
+                    {% endif %}
                     {% if perms.obras.delete_obra %}
                         · <a href="{% url 'obras:obra_excluir' obra.pk %}">Excluir</a>
                     {% endif %}

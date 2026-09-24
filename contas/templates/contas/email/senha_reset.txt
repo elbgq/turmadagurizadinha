@@ -1,0 +1,11 @@
+Olá{% if user.first_name %}, {{ user.first_name }}{% endif %},
+
+Recebemos um pedido para redefinir a senha da sua conta na Turma da Gurizadinha ({{ email }}).
+
+Para definir uma nova senha, acesse o link abaixo:
+
+{{ protocol }}://{{ domain }}{% url 'contas:senha_redefinir' uidb64=uid token=token %}
+
+Esse link vale por alguns dias. Se você não pediu essa redefinição, pode ignorar este e-mail — sua senha atual continua a mesma.
+
+Equipe Turma da Gurizadinha

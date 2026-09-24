@@ -1,0 +1,6 @@
+/* Tema "Atual (amarelo)" — cores originais do site (ver base.css). */
+:root {
+    --cor-destaque: #ffcc4d;
+    --cor-fundo: #fffdf6;
+    --cor-card: #fff6df;
+}

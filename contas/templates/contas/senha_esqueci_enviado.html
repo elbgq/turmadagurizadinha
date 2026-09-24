@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Verifique seu e-mail{% endblock %}
+
+{% block content %}
+<h1>Verifique seu e-mail</h1>
+<p>Se o e-mail informado estiver cadastrado, enviamos um link para redefinir a senha. Ele vale por alguns dias — confira também a caixa de spam.</p>
+<p><a href="{% url 'contas:login' %}">Voltar para o login</a></p>
+{% endblock %}

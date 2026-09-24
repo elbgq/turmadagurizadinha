@@ -17,6 +17,7 @@ staticfiles/
 
 # Variáveis de ambiente / segredos
 .env
+.env.example
 
 # Editor
 .vscode/*

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Redefinir senha{% endblock %}
+
+{% block content %}
+<h1>Redefinir senha</h1>
+
+{% if validlink %}
+    <form class="form" method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div class="form__campo">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn">Salvar nova senha</button>
+    </form>
+{% else %}
+    <p class="mensagem mensagem--erro">Este link de redefinição não é válido ou já expirou.</p>
+    <p><a href="{% url 'contas:senha_esqueci' %}">Solicitar um novo link</a></p>
+{% endif %}
+{% endblock %}
