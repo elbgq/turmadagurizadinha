@@ -1,16 +1,24 @@
 /* Estilos base — Turma da Gurizadinha
    Ajustar conforme os wireframes definidos na Fase 1. */
 
-/* Variáveis de cor do tema ativo (ver static/css/temas/) — valores aqui
-   são o fallback "Atual", usados só se o CSS do tema não carregar. O
-   base.html sempre carrega este arquivo primeiro e o do tema depois,
-   então o tema é quem decide os valores finais. Mudança de ESTRUTURA
-   (layout, espaçamento) é feita só aqui; os arquivos de tema só
-   redefinem estas três variáveis. */
+/* Paleta oficial do Manual de Marca "Turma da Gurizadinha" (recebido da
+   cliente em 25/09/2026) — substitui o antigo seletor de 4 temas
+   (ConfiguracaoSite/Atual-Verde-Azul-Bordô, removido em 28/09/2026). As
+   variáveis abaixo são as ÚNICAS 4 cores do manual; nada aqui é uma cor
+   inventada. Critério de uso combinado com a cliente:
+   - fundo/áreas grandes: a mais clara (#FCEECC);
+   - navbar/rodapé: o dourado (#F8C140), de preferência;
+   - elementos pequenos (botões): as mais escuras (#39404A e #4B576B).
+   Não existe mais arquivo de tema separado — é um tema único e fixo. */
 :root {
-    --cor-destaque: #ffcc4d;
-    --cor-fundo: #fffdf6;
-    --cor-card: #fff6df;
+    --cor-fundo: #FCEECC;       /* creme claro — fundo do site */
+    --cor-card: #FCEECC;        /* não há uma 5ª cor no manual para "card";
+                                    cartões se distinguem do fundo só por
+                                    borda/sombra (ver .obra-card abaixo) */
+    --cor-destaque: #F8C140;    /* amarelo-dourado — navbar, rodapé, botão primário de destaque */
+    --cor-texto: #39404A;       /* chumbo escuro — texto principal e botões pequenos */
+    --cor-secundaria: #4B576B;  /* azul-acinzentado — links, botões secundários */
+    --cor-texto-claro: #FCEECC; /* texto claro sobre fundos escuros (ex.: botão primário) */
 }
 
 * {
@@ -22,9 +30,28 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    font-family: "Segoe UI", Verdana, sans-serif;
-    color: #333;
+    /* Work Sans (corpo de texto) — ver <link> do Google Fonts no base.html.
+       Substituto gratuito da Amor Sans Text Pro (fonte paga do manual). */
+    font-family: "Work Sans", "Segoe UI", Verdana, sans-serif;
+    color: var(--cor-texto);
     background: var(--cor-fundo);
+}
+
+/* Boogaloo (títulos) — substituto gratuito da Barthowheel (fonte do
+   manual sem licença comercial clara). Aplica-se a todo título do site,
+   sem precisar marcar cada um individualmente. */
+h1, h2, h3 {
+    font-family: "Boogaloo", cursive;
+    font-weight: normal;
+    color: var(--cor-texto);
+}
+
+a {
+    color: var(--cor-secundaria);
+}
+
+a:hover {
+    color: var(--cor-texto);
 }
 
 .navbar {
@@ -34,12 +61,23 @@ body {
     padding: 1rem 2rem;
     background: var(--cor-destaque);
 }
- 
+
 .navbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     font-weight: bold;
     font-size: 1.25rem;
     text-decoration: none;
-    color: #333;
+    color: var(--cor-texto);
+}
+
+/* Logomarca oficial (Manual de Marca, recebido 25/09/2026) — altura fixa
+   para caber no navbar; a largura acompanha a proporção da imagem. */
+.navbar__logo {
+    height: 6.0rem; /* Ajuste conforme o tamanho do navbar */
+    width: auto;
+    display: block;
 }
 
 /* Menu do usuário (contas) — Django Admin (staff), trocar senha, sair;
@@ -55,7 +93,7 @@ body {
 
 .navbar__usuario {
     font-weight: bold;
-    color: #333;
+    color: var(--cor-texto);
 }
 
 .navbar__sair {
@@ -68,7 +106,7 @@ body {
     border: none;
     padding: 0;
     font: inherit;
-    color: #333;
+    color: var(--cor-texto);
     text-decoration: underline;
     cursor: pointer;
 }
@@ -102,24 +140,33 @@ body {
     padding-left: 1.1rem;
 }
 
+/* Botões — elementos de pouca área de renderização, por isso usam as
+   cores mais escuras da paleta (#39404A), com texto claro para contraste;
+   não o dourado de destaque, reservado para navbar/rodapé. */
 .btn {
     align-self: flex-start;
     padding: 0.6rem 1.2rem;
     border: none;
     border-radius: 999px;
-    background: var(--cor-destaque);
-    color: #333;
+    background: var(--cor-texto);
+    color: var(--cor-texto-claro);
     font-weight: bold;
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
 }
 
+/* Botão secundário/menos importante — contorno na segunda cor mais
+   escura da paleta, sem preenchimento. */
 .btn--ghost {
     background: transparent;
-    border: 1px solid #ccc;
+    border: 1px solid var(--cor-secundaria);
+    color: var(--cor-secundaria);
 }
 
+/* Ação destrutiva (excluir) — cor de alerta fora da paleta da marca, de
+   propósito: é uma convenção universal de UI para "cuidado", não uma
+   escolha de identidade visual. */
 .btn--perigo {
     background: #d64545;
     color: #fff;
@@ -127,8 +174,38 @@ body {
 
 /* Cadastro de conteúdo fora do Admin (obras/templates/obras/gestao/) */
 .form--obra,
-.form--alternativas {
+.form--alternativas,
+.form--pagina-institucional {
     max-width: 600px;
+}
+
+/* Edição do conteúdo institucional (Quem somos / A Turminha) —
+   acréscimo de 29/09/2026. Cada <fieldset> agrupa uma seção da
+   página (História, Missão, Visão, Valores...); mesmo visual dos
+   cartões de pergunta (.form__questao) para ficar consistente. */
+.form__secao-institucional {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.form__secao-institucional legend {
+    font-weight: bold;
+    padding: 0 0.4rem;
+    color: var(--cor-secundaria);
+}
+
+/* Link para as telas de "Quem somos"/"A Turminha" na lista de gestão
+   de obras (obras/templates/obras/gestao/lista.html). */
+.gestao-paginas-institucionais {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: baseline;
 }
 
 .form__campo textarea {
@@ -169,7 +246,7 @@ body {
 .form__novo-enunciado {
     margin: 0;
     font-weight: bold;
-    color: #9c6b22;
+    color: var(--cor-secundaria);
 }
 
 .form__correta,
@@ -195,48 +272,6 @@ body {
     color: #8a2c20;
 }
 
-/* Tela "Tema do site" (contas/views.py, superusuário) — cada opção
-   mostra uma amostra da cor de destaque daquele tema. As cores aqui são
-   fixas de propósito (não usam var(--cor-destaque)): a tela precisa
-   mostrar a amostra de TODOS os temas, não só do que está ativo agora. */
-.tema-opcoes {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-}
-
-.tema-opcao {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    cursor: pointer;
-}
-
-.tema-opcao__amostra {
-    width: 1.4rem;
-    height: 1.4rem;
-    border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    display: inline-block;
-}
-
-.tema-opcao--atual .tema-opcao__amostra {
-    background: #ffcc4d;
-}
-
-.tema-opcao--verde .tema-opcao__amostra {
-    background: #81da9e;
-}
-
-.tema-opcao--azul .tema-opcao__amostra {
-    background: #85bae0;
-}
-
-.tema-opcao--bordo .tema-opcao__amostra {
-    background: #e29cae;
-}
-
 .tabela-gestao {
     width: 100%;
     border-collapse: collapse;
@@ -249,14 +284,15 @@ body {
     border-bottom: 1px solid #eee;
 }
 
-/* Linhas intercaladas — mesma cor do fundo do template e o tom pastel
-   usado no .obra-card, para facilitar a leitura da tabela. */
+/* Linhas intercaladas — a paleta do manual não tem uma 5ª cor para isso,
+   então as linhas pares usam um tom bem sutil da cor secundária (só para
+   facilitar a leitura da tabela), sem introduzir uma cor fora da marca. */
 .tabela-gestao tbody tr:nth-child(odd) {
     background: var(--cor-fundo);
 }
 
 .tabela-gestao tbody tr:nth-child(even) {
-    background: var(--cor-card);
+    background: rgba(75, 87, 107, 0.08);
 }
 
 .container {
@@ -274,7 +310,7 @@ body {
     padding: 1rem 2rem;
     text-align: center;
     font-size: 0.8rem;
-    color: #333;
+    color: var(--cor-texto);
 }
 
 .footer__linha {
@@ -282,12 +318,73 @@ body {
 }
 
 .footer__contato a {
-    color: #333;
+    color: var(--cor-texto);
+}
+
+/* Breve apresentação da plataforma (Home) — card em toda a largura, com
+   o texto de um lado e a logomarca oficial do outro (mesmo padrão visual
+   dos cards de "Quem somos", ver .quemsomos-card abaixo). */
+.apresentacao-secao {
+    margin-bottom: 2rem;
+}
+
+.apresentacao-card {
+    background: var(--cor-card);
+    border: 1px solid var(--cor-destaque);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.apresentacao-card__texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.apresentacao-card__texto h2 {
+    margin-top: 0;
+}
+
+.apresentacao-card__texto ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    line-height: 1.6;
+}
+
+.apresentacao-card__logo {
+    height: 8rem;
+    width: auto;
+    flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .apresentacao-card {
+        flex-direction: column-reverse;
+        text-align: center;
+    }
+
+    .apresentacao-card__texto ul {
+        text-align: left;
+    }
+
+    .apresentacao-card__logo {
+        height: 6rem;
+    }
+}
+
+.apresentacao-transicao {
+    font-style: italic;
+    color: var(--cor-secundaria);
+    margin: 0 0 0.5rem;
 }
 
 .obras-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
 }
 
@@ -296,7 +393,7 @@ body {
         grid-template-columns: repeat(2, 1fr);
     }
 }
- 
+
 .obra-card {
     border: 1px solid var(--cor-destaque);
     border-radius: 8px;
@@ -318,6 +415,199 @@ body {
     max-width: 100%;
     height: auto;
     display: block;
+}
+
+/* Texto completo da obra — mais espaçamento entre linhas e entre
+   parágrafos do que o padrão do navegador, para ficar confortável de ler
+   num texto longo (pedido da cliente em 28/09/2026). */
+.obra-texto {
+    max-width: 80ch;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+}
+
+.obra-texto p {
+    margin: 0 0 1.2em;
+}
+
+.obra-texto p:last-child {
+    margin-bottom: 0;
+}
+
+/* Categoria da obra (campo Obra.categoria) — linha simples antes dos
+   tópicos para o professor, na mesma fonte de título (Boogaloo) usada em
+   h1/h2/h3, para ficar visualmente como as demais "etiquetas" da página. */
+.obra-categoria {
+    margin: 0 0 1.5rem;
+    font-family: "Boogaloo", cursive;
+    font-weight: normal;
+    font-size: 1.2rem;
+    color: var(--cor-texto);
+}
+
+/* Página "Quem somos" (obras/templates/obras/quem_somos.html) — cards com
+   o texto de um lado e um personagem do Clube do outro, a partir da
+   seção "Personagens" do Manual de Marca (fundo já removido nas imagens,
+   ver static/img/personagens/). */
+.quemsomos-secao {
+    margin-bottom: 2rem;
+}
+
+.quemsomos-linha-dupla {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.quemsomos-linha-dupla .quemsomos-card--dupla {
+    flex: 1;
+    min-width: 0;
+}
+
+.quemsomos-card {
+    background: var(--cor-card);
+    border: 1px solid var(--cor-destaque);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+}
+
+.quemsomos-card__conteudo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.quemsomos-card__texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.quemsomos-card__texto h2 {
+    margin-top: 0;
+}
+
+.quemsomos-card__texto p {
+    line-height: 1.6;
+}
+
+.quemsomos-card__personagem {
+    max-height: 220px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.quemsomos-valores {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.quemsomos-valores__item h3 {
+    font-size: 1.05rem;
+    margin: 0 0 0.35rem;
+    color: var(--cor-secundaria);
+}
+
+.quemsomos-valores__item h3 span {
+    font-family: "Work Sans", sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--cor-texto);
+    opacity: 0.75;
+}
+
+.quemsomos-valores__item p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+    .quemsomos-linha-dupla {
+        flex-direction: column;
+    }
+
+    .quemsomos-card__conteudo {
+        flex-direction: column-reverse;
+    }
+
+    .quemsomos-card__personagem {
+        max-height: 160px;
+    }
+
+    .quemsomos-valores {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Página "A Turminha" (obras/templates/obras/a_turminha.html) — 5 cards
+   empilhados: card de abertura (cena do grupo, página 13 do Manual de
+   Marca) seguido de um card por personagem (Guri, Cícero, Germano e
+   Catarina, páginas 14 a 17), cada um com o texto de um lado e a
+   ilustração-base do personagem do outro (sem variações/expressões/
+   acessórios — fundo já removido, ver static/img/personagens/a_turminha/).
+   Mesmo padrão visual dos cards de "Quem somos" (.quemsomos-card). */
+.turminha-secao {
+    margin-bottom: 1.5rem;
+}
+
+.turminha-card {
+    background: var(--cor-card);
+    border: 1px solid var(--cor-destaque);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.turminha-card__texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.turminha-card__texto h2 {
+    margin-top: 0;
+}
+
+.turminha-card__texto p {
+    line-height: 1.6;
+}
+
+.turminha-card__personagem {
+    max-height: 220px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.turminha-card__personagem--grupo {
+    max-height: 260px;
+    max-width: 45%;
+}
+
+@media (max-width: 900px) {
+    .turminha-card {
+        flex-direction: column-reverse;
+    }
+
+    .turminha-card--intro {
+        flex-direction: column;
+    }
+
+    .turminha-card__personagem {
+        max-height: 160px;
+    }
+
+    .turminha-card__personagem--grupo {
+        max-height: 200px;
+        max-width: 90%;
+    }
 }
 
 /* Relatório de desempenho (quiz + avaliação interativa) */
@@ -344,6 +634,14 @@ body {
     cursor: pointer;
 }
 
+/* Download do PDF de atividade de apoio (acréscimo à Fase 6, 28/09/2026) —
+   convive com as perguntas cadastradas acima; some na impressão (ver
+   @media print abaixo), já que ali o que sai no papel são as perguntas. */
+.obra-atividades__baixar {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
 /* Lista de alternativas das atividades de apoio — quadrado vazio antes
    de cada opção, para o aluno marcar a resposta no papel. */
 .obra-atividades__opcoes {
@@ -364,7 +662,7 @@ body {
     flex: 0 0 auto;
     width: 0.9em;
     height: 0.9em;
-    border: 1px solid #333;
+    border: 1px solid var(--cor-texto);
 }
 
 @media print {
@@ -380,9 +678,11 @@ body {
     .obra-texto-breve,
     .obra-capa,
     .obra-texto,
+    .obra-categoria,
     .obra-topicos,
     .obra-acoes,
-    .obra-atividades__imprimir {
+    .obra-atividades__imprimir,
+    .obra-atividades__baixar {
         display: none;
     }
 

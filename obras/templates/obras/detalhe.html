@@ -7,11 +7,21 @@
 <h1>{{ obra.titulo }}</h1>
 {% if obra.texto_breve %}<p class="obra-texto-breve">{{ obra.texto_breve }}</p>{% endif %}
 
-{% if obra.capa %}<img class="obra-capa" src="{{ obra.capa.url }}" alt="Capa de {{ obra.titulo }}" />{% endif %}
+{% if obra.imagem_pagina %}<img class="obra-capa" src="{{ obra.imagem_pagina.url }}" alt="{{ obra.titulo }}" />{% endif %}
 
 <section class="obra-texto">
-    <p>{{ obra.texto_completo|linebreaks }}</p>
+    {# Sem <p> em volta do filtro |linebreaks: ele já gera os próprios #}
+    {# parágrafos a partir das linhas em branco do texto (um <p> dentro #}
+    {# de outro é inválido e atrapalhava o espaçamento entre parágrafos). #}
+    {{ obra.texto_completo|linebreaks }}
 </section>
+
+{% if obra.categoria %}
+    {# Só o rótulo usa a fonte de título (Boogaloo, ver .obra-categoria__rotulo #}
+    {# no base.css) — o valor da categoria fica no Work Sans normal do corpo #}
+    {# do texto, no mesmo padrão de "Tópicos para o professor" (h2 + texto). #}
+    <p class="obra-categoria"><span class="obra-categoria__rotulo">Categoria da Obra:</span> {{ obra.get_categoria_display }}</p>
+{% endif %}
 
 <aside class="obra-topicos">
     <h2>Tópicos para o professor</h2>
@@ -20,6 +30,9 @@
 
 <section class="obra-atividades">
     <h2>Atividades de apoio para impressão</h2>
+    {% if obra.atividade_pdf %}
+        <a class="btn obra-atividades__baixar" href="{% url 'obras:atividade_pdf' obra.slug %}">Baixar atividade (PDF)</a>
+    {% endif %}
     {% for questao in questoes %}
         <div class="obra-atividades__questao">
             <p>{{ forloop.counter }}. {{ questao.enunciado }}</p>
@@ -30,13 +43,18 @@
             </ul>
         </div>
     {% empty %}
-        <p>Nenhuma atividade cadastrada para esta obra ainda.</p>
+        {% if not obra.atividade_pdf %}
+            <p>Nenhuma atividade cadastrada para esta obra ainda.</p>
+        {% endif %}
     {% endfor %}
-    <button class="obra-atividades__imprimir" onclick="window.print()">Imprimir atividades</button>
+    {% if questoes %}
+        <button class="obra-atividades__imprimir" onclick="window.print()">Imprimir atividades</button>
+    {% endif %}
 </section>
 
 <nav class="obra-acoes">
     <a href="{% url 'quiz:quiz' obra.slug %}">Quiz</a>
     <a href="{% url 'quiz:resultado' obra.slug %}">Relatório de desempenho</a>
+    <a href="{% url 'obras:home' %}">Página inicial</a>
 </nav>
 {% endblock %}

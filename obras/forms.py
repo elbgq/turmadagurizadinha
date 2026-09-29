@@ -2,7 +2,10 @@ from django.forms import inlineformset_factory
 from django import forms
 from django.utils.text import slugify
 
-from .models import Alternativa, Obra, Questao
+from .models import (
+    Alternativa, Obra, PaginaATurminha, PaginaQuemSomos,
+    PersonagemATurminha, Questao, ValorQuemSomos,
+)
 
 
 class ObraForm(forms.ModelForm):
@@ -15,10 +18,14 @@ class ObraForm(forms.ModelForm):
 
     class Meta:
         model = Obra
+        # "autor" e "faixa_etaria" continuam existindo no model (e no Django
+        # Admin), mas ficam ocultos desta tela de cadastro a pedido da
+        # cliente (28/09/2026). "categoria" aparece logo após "titulo".
         fields = [
-            "titulo", "slug", "autor", "ilustrador", "faixa_etaria", "capa",
+            "titulo", "categoria", "slug", "ilustrador", "capa", "imagem_pagina",
             "texto_breve", "texto_completo", "topicos_resumo",
             "tempo_limite_segundos", "ordem", "publicada",
+            "atividade_pdf",
         ]
         widgets = {
             "texto_completo": forms.Textarea(attrs={"rows": 8}),
@@ -62,4 +69,55 @@ AlternativaFormSet = inlineformset_factory(
     Questao, Alternativa,
     fields=("texto", "correta"),
     extra=2, can_delete=True,
+)
+
+
+# --------------------------------------------------------------------
+# Conteúdo institucional editável — telas de gestão para "Quem somos"
+# e "A Turminha" (acréscimo de 29/09/2026, ver obras/models.py).
+# --------------------------------------------------------------------
+
+class PaginaQuemSomosForm(forms.ModelForm):
+    class Meta:
+        model = PaginaQuemSomos
+        fields = [
+            "historia_texto", "historia_imagem",
+            "missao_texto", "missao_imagem",
+            "visao_texto", "visao_imagem",
+            "valores_imagem",
+        ]
+        widgets = {
+            "historia_texto": forms.Textarea(attrs={"rows": 8}),
+            "missao_texto": forms.Textarea(attrs={"rows": 3}),
+            "visao_texto": forms.Textarea(attrs={"rows": 3}),
+        }
+
+
+# Lista de Valores — adicionar/remover/reordenar direto no mesmo
+# formulário (decisão da cliente em 29/09/2026), mesmo padrão de
+# QuestaoFormSet acima.
+ValorQuemSomosFormSet = inlineformset_factory(
+    PaginaQuemSomos, ValorQuemSomos,
+    fields=("titulo", "tema", "texto", "ordem"),
+    widgets={"texto": forms.Textarea(attrs={"rows": 2})},
+    extra=1, can_delete=True,
+)
+
+
+class PaginaATurminhaForm(forms.ModelForm):
+    class Meta:
+        model = PaginaATurminha
+        fields = ["texto_introducao", "imagem_grupo"]
+        widgets = {
+            "texto_introducao": forms.Textarea(attrs={"rows": 3}),
+        }
+
+
+# Lista de Personagens — mesmo padrão de adicionar/remover/reordenar,
+# incluindo a imagem de cada um (decisão da cliente em 29/09/2026).
+PersonagemATurminhaFormSet = inlineformset_factory(
+    PaginaATurminha, PersonagemATurminha,
+    fields=("nome", "texto", "imagem", "ordem"),
+    widgets={"texto": forms.Textarea(attrs={"rows": 3})},
+    extra=1, can_delete=True,
 )
