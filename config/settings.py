@@ -51,8 +51,14 @@ if not SECRET_KEY:
             "no servidor antes de rodar com DEBUG=False."
         )
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+ALLOWED_HOSTS = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,septal-zainab-unsymptomatic.ngrok-free.dev"
+).split(",")
 
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "https://septal-zainab-unsymptomatic.ngrok-free.dev",
+).split(",")
 
 # Application definition
 
