@@ -5,8 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Turma da Gurizadinha{% endblock %}</title>
+    {# Tipografia do Manual de Marca (recebido 25/09/2026): Boogaloo (títulos) #}
+    {# e Work Sans (texto corrido) — alternativas gratuitas no Google Fonts a #}
+    {# Barthowheel/Amor Sans Text Pro, enquanto a cliente não licencia essas. #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static tema_css %}">
 </head>
 <body>
     {% include "partials/navbar.html" %}

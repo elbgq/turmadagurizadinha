@@ -1,7 +1,27 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Turma da Gurizadinha — Início{% endblock %}
 
 {% block content %}
+
+{# Fase 5: breve apresentação da plataforma, no topo da Home — texto à #}
+{# esquerda e a logomarca oficial (mesma do navbar) à direita. #}
+<section class="apresentacao-secao">
+    <div class="apresentacao-card">
+        <div class="apresentacao-card__texto">
+            <h2>Breve apresentação da plataforma (O que você encontra aqui!):</h2>
+            <ul>
+                <li>Obra completa;</li>
+                <li>Resumo para o professor usar em sala de aula;</li>
+                <li>Atividade de apoio;</li>
+                <li>Quiz.</li>
+            </ul>
+        </div>
+        <img src="{% static 'img/turma-da-gurizadinha-logo.png' %}" alt="Turma da Gurizadinha" class="apresentacao-card__logo">
+    </div>
+</section>
+
+
 <h1>Histórias Infantis</h1>
 
 {# Cadastro de conteúdo fora do Admin (ver README) — só aparece para quem #}

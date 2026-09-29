@@ -9,7 +9,6 @@ app_name = "contas"
 
 urlpatterns = [
     path("cadastro/", views.cadastro, name="cadastro"),
-    path("tema/", views.tema, name="tema"),
     path(
         "login/",
         login_not_required(
