@@ -7,6 +7,19 @@
     <p><a class="btn" href="{% url 'obras:obra_nova' %}">+ Nova obra</a></p>
 {% endif %}
 
+{% if perms.obras.change_paginaquemsomos or perms.obras.change_paginaaturminha %}
+    <p class="gestao-paginas-institucionais">
+        Conteúdo institucional:
+        {% if perms.obras.change_paginaquemsomos %}
+            <a href="{% url 'obras:quem_somos_editar' %}">Editar "Quem somos"</a>
+        {% endif %}
+        {% if perms.obras.change_paginaquemsomos and perms.obras.change_paginaaturminha %}·{% endif %}
+        {% if perms.obras.change_paginaaturminha %}
+            <a href="{% url 'obras:a_turminha_editar' %}">Editar "A Turminha"</a>
+        {% endif %}
+    </p>
+{% endif %}
+
 <table class="tabela-gestao">
     <thead>
         <tr>

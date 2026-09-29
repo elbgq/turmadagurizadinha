@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Editar "A Turminha"{% endblock %}
+
+{% block content %}
+<h1>Editar página "A Turminha"</h1>
+
+{% for message in messages %}<p class="mensagem">{{ message }}</p>{% endfor %}
+
+<form class="form form--pagina-institucional" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <fieldset class="form__secao-institucional">
+        <legend>Introdução</legend>
+        <div class="form__campo">
+            <label for="{{ form.texto_introducao.id_for_label }}">Texto</label>
+            {{ form.texto_introducao }}
+            {{ form.texto_introducao.errors }}
+        </div>
+        <div class="form__campo">
+            <label for="{{ form.imagem_grupo.id_for_label }}">Imagem do grupo (os personagens reunidos)</label>
+            {% if form.instance.imagem_grupo %}<p><small>Atual: {{ form.instance.imagem_grupo.name }}</small></p>{% endif %}
+            {{ form.imagem_grupo }}
+            {{ form.imagem_grupo.errors }}
+        </div>
+    </fieldset>
+
+    <fieldset class="form__secao-institucional">
+        <legend>Personagens</legend>
+        <p>Cada personagem abaixo vira um card na página. Use "Ordem" para definir a sequência; marque "Excluir" para remover um personagem.</p>
+        {{ formset.management_form }}
+        {% for personagem_form in formset %}
+            <fieldset class="form__questao">
+                {{ personagem_form.id }}
+                {{ personagem_form.non_field_errors }}
+                {% if not personagem_form.instance.pk %}
+                    <p class="form__novo-enunciado">Novo personagem</p>
+                {% endif %}
+                <div class="form__campo">
+                    <label for="{{ personagem_form.nome.id_for_label }}">Nome</label>
+                    {{ personagem_form.nome }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ personagem_form.texto.id_for_label }}">Texto</label>
+                    {{ personagem_form.texto }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ personagem_form.imagem.id_for_label }}">Imagem</label>
+                    {% if personagem_form.instance.imagem %}<p><small>Atual: {{ personagem_form.instance.imagem.name }}</small></p>{% endif %}
+                    {{ personagem_form.imagem }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ personagem_form.ordem.id_for_label }}">Ordem</label>
+                    {{ personagem_form.ordem }}
+                </div>
+                {% if personagem_form.DELETE %}
+                    <label class="form__excluir">{{ personagem_form.DELETE }} Excluir este personagem</label>
+                {% endif %}
+            </fieldset>
+        {% endfor %}
+    </fieldset>
+
+    <button type="submit" class="btn">Salvar</button>
+</form>
+
+<p><a href="{% url 'obras:obra_lista' %}"> <- Voltar para a gestão</a></p>
+{% endblock %}

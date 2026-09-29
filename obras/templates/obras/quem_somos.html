@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Turma da Gurizadinha — Quem somos{% endblock %}
+
+{% block content %}
+<h1>Quem somos!</h1>
+
+{# Conteúdo editável pela equipe editorial desde 29/09/2026 (ver #}
+{# PaginaQuemSomos/ValorQuemSomos em obras/models.py e a tela #}
+{# /gerenciar/quem-somos/) — texto e imagens vêm do banco, não mais #}
+{# fixos no template. Semeado a partir do Manual de Marca "Turma da #}
+{# Gurizadinha" pela migration 0007. #}
+{% if perms.obras.change_paginaquemsomos %}
+    <p><a class="btn" href="{% url 'obras:quem_somos_editar' %}">Editar esta página</a></p>
+{% endif %}
+
+<section class="quemsomos-secao">
+    <div class="quemsomos-card">
+        <div class="quemsomos-card__conteudo">
+            <div class="quemsomos-card__texto">
+                <h2>História do Clube</h2>
+                {{ pagina.historia_texto|linebreaks }}
+            </div>
+            {% if pagina.historia_imagem %}
+                <img src="{{ pagina.historia_imagem.url }}" alt="História do Clube" class="quemsomos-card__personagem">
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="quemsomos-secao quemsomos-linha-dupla">
+    <div class="quemsomos-card quemsomos-card--dupla">
+        <div class="quemsomos-card__conteudo">
+            <div class="quemsomos-card__texto">
+                <h2>Missão</h2>
+                {{ pagina.missao_texto|linebreaks }}
+            </div>
+            {% if pagina.missao_imagem %}
+                <img src="{{ pagina.missao_imagem.url }}" alt="Missão" class="quemsomos-card__personagem">
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="quemsomos-card quemsomos-card--dupla">
+        <div class="quemsomos-card__conteudo">
+            <div class="quemsomos-card__texto">
+                <h2>Visão</h2>
+                {{ pagina.visao_texto|linebreaks }}
+            </div>
+            {% if pagina.visao_imagem %}
+                <img src="{{ pagina.visao_imagem.url }}" alt="Visão" class="quemsomos-card__personagem">
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="quemsomos-secao">
+    <div class="quemsomos-card">
+        <div class="quemsomos-card__conteudo">
+            <div class="quemsomos-card__texto">
+                <h2>Valores</h2>
+                <div class="quemsomos-valores">
+                    {% for valor in valores %}
+                        <div class="quemsomos-valores__item">
+                            <h3>{{ valor.titulo }} <span>({{ valor.tema }})</span></h3>
+                            <p>{{ valor.texto }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% if pagina.valores_imagem %}
+                <img src="{{ pagina.valores_imagem.url }}" alt="Valores" class="quemsomos-card__personagem">
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

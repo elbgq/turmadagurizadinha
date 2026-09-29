@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Turma da Gurizadinha — A Turminha{% endblock %}
+
+{% block content %}
+<h1>A Turminha</h1>
+
+{# Conteúdo editável pela equipe editorial desde 29/09/2026 (ver #}
+{# PaginaATurminha/PersonagemATurminha em obras/models.py e a tela #}
+{# /gerenciar/a-turminha/) — texto e imagens vêm do banco, não mais #}
+{# fixos no template. Semeado a partir da seção "Personagens" do #}
+{# Manual de Marca (páginas 13 a 17) pela migration 0007. #}
+{% if perms.obras.change_paginaaturminha %}
+    <p><a class="btn" href="{% url 'obras:a_turminha_editar' %}">Editar esta página</a></p>
+{% endif %}
+
+<section class="turminha-secao">
+    <div class="turminha-card turminha-card--intro">
+        {% if pagina.imagem_grupo %}
+            <img src="{{ pagina.imagem_grupo.url }}" alt="Os personagens da Turma da Gurizadinha reunidos" class="turminha-card__personagem turminha-card__personagem--grupo">
+        {% endif %}
+        <div class="turminha-card__texto">
+            <h2>Os personagens</h2>
+            {{ pagina.texto_introducao|linebreaks }}
+        </div>
+    </div>
+</section>
+
+{% for personagem in personagens %}
+    <section class="turminha-secao">
+        <div class="turminha-card">
+            <div class="turminha-card__texto">
+                <h2>{{ personagem.nome }}</h2>
+                {{ personagem.texto|linebreaks }}
+            </div>
+            {% if personagem.imagem %}
+                <img src="{{ personagem.imagem.url }}" alt="{{ personagem.nome }}" class="turminha-card__personagem">
+            {% endif %}
+        </div>
+    </section>
+{% endfor %}
+{% endblock %}

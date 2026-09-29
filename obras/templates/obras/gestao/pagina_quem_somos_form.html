@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Editar "Quem somos"{% endblock %}
+
+{% block content %}
+<h1>Editar página "Quem somos"</h1>
+
+{% for message in messages %}<p class="mensagem">{{ message }}</p>{% endfor %}
+
+<form class="form form--pagina-institucional" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <fieldset class="form__secao-institucional">
+        <legend>História do Clube</legend>
+        <div class="form__campo">
+            <label for="{{ form.historia_texto.id_for_label }}">Texto</label>
+            {{ form.historia_texto }}
+            {{ form.historia_texto.errors }}
+        </div>
+        <div class="form__campo">
+            <label for="{{ form.historia_imagem.id_for_label }}">Imagem</label>
+            {% if form.instance.historia_imagem %}<p><small>Atual: {{ form.instance.historia_imagem.name }}</small></p>{% endif %}
+            {{ form.historia_imagem }}
+            {{ form.historia_imagem.errors }}
+        </div>
+    </fieldset>
+
+    <fieldset class="form__secao-institucional">
+        <legend>Missão</legend>
+        <div class="form__campo">
+            <label for="{{ form.missao_texto.id_for_label }}">Texto</label>
+            {{ form.missao_texto }}
+            {{ form.missao_texto.errors }}
+        </div>
+        <div class="form__campo">
+            <label for="{{ form.missao_imagem.id_for_label }}">Imagem</label>
+            {% if form.instance.missao_imagem %}<p><small>Atual: {{ form.instance.missao_imagem.name }}</small></p>{% endif %}
+            {{ form.missao_imagem }}
+            {{ form.missao_imagem.errors }}
+        </div>
+    </fieldset>
+
+    <fieldset class="form__secao-institucional">
+        <legend>Visão</legend>
+        <div class="form__campo">
+            <label for="{{ form.visao_texto.id_for_label }}">Texto</label>
+            {{ form.visao_texto }}
+            {{ form.visao_texto.errors }}
+        </div>
+        <div class="form__campo">
+            <label for="{{ form.visao_imagem.id_for_label }}">Imagem</label>
+            {% if form.instance.visao_imagem %}<p><small>Atual: {{ form.instance.visao_imagem.name }}</small></p>{% endif %}
+            {{ form.visao_imagem }}
+            {{ form.visao_imagem.errors }}
+        </div>
+    </fieldset>
+
+    <fieldset class="form__secao-institucional">
+        <legend>Valores</legend>
+        <div class="form__campo">
+            <label for="{{ form.valores_imagem.id_for_label }}">Imagem da seção</label>
+            {% if form.instance.valores_imagem %}<p><small>Atual: {{ form.instance.valores_imagem.name }}</small></p>{% endif %}
+            {{ form.valores_imagem }}
+            {{ form.valores_imagem.errors }}
+        </div>
+
+        <p>Cada valor abaixo vira um item na lista da página. Use "Ordem" para definir a sequência; marque "Excluir" para remover um valor.</p>
+        {{ formset.management_form }}
+        {% for valor_form in formset %}
+            <fieldset class="form__questao">
+                {{ valor_form.id }}
+                {{ valor_form.non_field_errors }}
+                {% if not valor_form.instance.pk %}
+                    <p class="form__novo-enunciado">Novo valor</p>
+                {% endif %}
+                <div class="form__campo">
+                    <label for="{{ valor_form.titulo.id_for_label }}">Título</label>
+                    {{ valor_form.titulo }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ valor_form.tema.id_for_label }}">Tema (entre parênteses)</label>
+                    {{ valor_form.tema }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ valor_form.texto.id_for_label }}">Texto</label>
+                    {{ valor_form.texto }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ valor_form.ordem.id_for_label }}">Ordem</label>
+                    {{ valor_form.ordem }}
+                </div>
+                {% if valor_form.DELETE %}
+                    <label class="form__excluir">{{ valor_form.DELETE }} Excluir este valor</label>
+                {% endif %}
+            </fieldset>
+        {% endfor %}
+    </fieldset>
+
+    <button type="submit" class="btn">Salvar</button>
+</form>
+
+<p><a href="{% url 'obras:obra_lista' %}"> <- Voltar para a gestão</a></p>
+{% endblock %}
