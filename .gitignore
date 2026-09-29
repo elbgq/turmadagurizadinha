@@ -10,14 +10,16 @@ __pycache__/
 
 # Django
 db.sqlite3
-db.sqlite3-3
+db.backup.sqlite3
+db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
 media/*
 !media/.gitkeep
 staticfiles/
 
 # Variáveis de ambiente / segredos
 .env
-.env.example
 
 # Editor
 .vscode/*
@@ -28,5 +30,7 @@ staticfiles/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+desktop.ini
 
 Claude outputs/*
+claude-setup/*
