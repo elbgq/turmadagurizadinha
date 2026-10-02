@@ -1,0 +1,43 @@
+{# Tabela de obras compartilhada por "Gerenciar obras" (gestao/lista.html) #}
+{# e "Lista de obras" (lista_publica.html) — acréscimo da reunião de #}
+{# 01/10/2026: coluna "Ordem" saiu, "Categoria" entrou nas duas telas; a #}
+{# coluna "Publicada" e as ações de Editar/Excluir só aparecem na versão #}
+{# de gestão (mostrar_publicada/mostrar_acoes_gestao, vindos da view). #}
+<table class="tabela-gestao">
+    <thead>
+        <tr>
+            <th>Título</th>
+            {% if mostrar_publicada %}<th>Publicada</th>{% endif %}
+            <th>Categoria</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for obra in obras %}
+            <tr>
+                <td>{{ obra.titulo }}</td>
+                {% if mostrar_publicada %}
+                    <td>{% if obra.publicada %}Sim{% else %}Não{% endif %}</td>
+                {% endif %}
+                <td>{{ obra.get_categoria_display|default:"—" }}</td>
+                <td>
+                    {% if mostrar_acoes_gestao %}
+                        {% if perms.obras.change_obra %}
+                            <a href="{% url 'obras:obra_editar' obra.pk %}">Editar</a>
+                        {% endif %}
+                        {% if perms.obras.delete_obra %}
+                            · <a href="{% url 'obras:obra_excluir' obra.pk %}">Excluir</a>
+                        {% endif %}
+                        {% if obra.publicada %}
+                            · <a href="{% url 'obras:detalhe' obra.slug %}">Ver página</a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'obras:detalhe' obra.slug %}" class="btn btn--ciano btn--pequeno">Acessar Obra</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="{% if mostrar_publicada %}4{% else %}3{% endif %}">Nenhuma obra encontrada.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -2,8 +2,6 @@
 {% block title %}{{ obra.titulo }}{% endblock %}
 
 {% block content %}
-{# Fase 5: layout completo (colunas, tipografia) fica para depois; #}
-{# aqui os dados já vêm do model Obra (Fase 4). #}
 <h1>{{ obra.titulo }}</h1>
 {% if obra.texto_breve %}<p class="obra-texto-breve">{{ obra.texto_breve }}</p>{% endif %}
 
@@ -16,6 +14,21 @@
     {{ obra.texto_completo|linebreaks }}
 </section>
 
+{% if termos_glossario %}
+    {# Glossário Gauchês — no final da página, abaixo dos botões de #}
+    {# navegação (reposicionado a pedido da cliente em 01/10/2026; antes #}
+    {# ficava entre a categoria e os botões, ordem da página 2 do #}
+    {# documento Layout-Plataforma-Teste-01.pdf). #}
+    <aside class="obra-glossario">
+        <h2 class="obra-glossario__titulo">Glossário Gauchês:</h2>
+        <ul class="obra-glossario__lista">
+            {% for termo in termos_glossario %}
+                <li><strong>{{ termo.termo }}:</strong> {{ termo.definicao }}</li>
+            {% endfor %}
+        </ul>
+    </aside>
+{% endif %}
+
 {% if obra.categoria %}
     {# Só o rótulo usa a fonte de título (Boogaloo, ver .obra-categoria__rotulo #}
     {# no base.css) — o valor da categoria fica no Work Sans normal do corpo #}
@@ -23,38 +36,23 @@
     <p class="obra-categoria"><span class="obra-categoria__rotulo">Categoria da Obra:</span> {{ obra.get_categoria_display }}</p>
 {% endif %}
 
-<aside class="obra-topicos">
-    <h2>Tópicos para o professor</h2>
-    <p>{{ obra.topicos_resumo|linebreaks }}</p>
-</aside>
-
-<section class="obra-atividades">
-    <h2>Atividades de apoio para impressão</h2>
-    {% if obra.atividade_pdf %}
-        <a class="btn obra-atividades__baixar" href="{% url 'obras:atividade_pdf' obra.slug %}">Baixar atividade (PDF)</a>
-    {% endif %}
-    {% for questao in questoes %}
-        <div class="obra-atividades__questao">
-            <p>{{ forloop.counter }}. {{ questao.enunciado }}</p>
-            <ul class="obra-atividades__opcoes">
-                {% for alternativa in questao.alternativas.all %}
-                    <li>{{ alternativa.texto }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% empty %}
-        {% if not obra.atividade_pdf %}
-            <p>Nenhuma atividade cadastrada para esta obra ainda.</p>
-        {% endif %}
-    {% endfor %}
-    {% if questoes %}
-        <button class="obra-atividades__imprimir" onclick="window.print()">Imprimir atividades</button>
-    {% endif %}
-</section>
-
-<nav class="obra-acoes">
-    <a href="{% url 'quiz:quiz' obra.slug %}">Quiz</a>
-    <a href="{% url 'quiz:resultado' obra.slug %}">Relatório de desempenho</a>
-    <a href="{% url 'obras:home' %}">Página inicial</a>
+{# Resumo, Atividade e Quiz Interativo passaram a ter rota e template #}
+{# próprios (acréscimo de 01/10/2026) — antes eram seções dentro desta #}
+{# mesma página. O botão do Quiz só leva à porta de entrada da lógica #}
+{# da Fase 7 (decisão da cliente). #}
+<nav class="obra-navegacao">
+    <a class="obra-navegacao__item" href="{% url 'obras:obra_resumo' obra.slug %}">
+        <span class="obra-navegacao__icone" aria-hidden="true"></span> Resumo
+    </a>
+    <a class="obra-navegacao__item" href="{% url 'obras:obra_atividade' obra.slug %}">
+        <span class="obra-navegacao__icone" aria-hidden="true"></span> Atividade
+    </a>
+    <a class="obra-navegacao__item" href="{% url 'obras:obra_quiz' obra.slug %}">
+        <span class="obra-navegacao__icone" aria-hidden="true"></span> Quiz interativo
+    </a>
 </nav>
+
+
+
+<p><a href="{% url 'obras:home' %}"> <- Página inicial</a></p>
 {% endblock %}

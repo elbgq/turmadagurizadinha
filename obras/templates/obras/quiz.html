@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Quiz interativo — {{ obra.titulo }}{% endblock %}
+
+{% block content %}
+<h1>Quiz interativo: {{ obra.titulo }}</h1>
+
+{# Esta página é só a porta de entrada: a lógica do quiz em si é da #}
+{# Fase 7 (ainda placeholder em quiz/views.py) — decisão da cliente #}
+{# em reunião de 01/10/2026. #}
+<nav class="obra-acoes">
+    <a class="btn btn--ciano" href="{% url 'quiz:quiz' obra.slug %}">Iniciar quiz</a>
+    <a href="{% url 'quiz:resultado' obra.slug %}">Relatório de desempenho</a>
+</nav>
+
+<p><a href="{% url 'obras:detalhe' obra.slug %}"> <- Voltar para a obra</a></p>
+{% endblock %}

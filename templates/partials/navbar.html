@@ -1,33 +1,50 @@
 {% load static %}
 <nav class="navbar">
     <a href="{% url 'obras:home' %}" class="navbar__brand">
-        <img src="{% static 'img/turma-da-gurizadinha-logo.png' %}" alt="Turma da Gurizadinha" class="navbar__logo">
+        {# Logomarca sem os personagens (Manual de Marca — versão "principal" #}
+        {# de static/img/marcas/), trocada em 01/10/2026 a pedido da cliente. #}
+        <img src="{% static 'img/marcas/marca-principal.png' %}" alt="Turma da Gurizadinha" class="navbar__logo">
     </a>
 
-    <a href="{% url 'obras:quem_somos' %}">Quem somos</a>
-    <a href="{% url 'obras:a_turminha' %}">A turminha</a>
+    <a href="{% url 'obras:quem_somos' %}" class="navbar__link">Quem somos</a>
+    <a href="{% url 'obras:a_turminha' %}" class="navbar__link">A turminha</a>
 
-    {# Controle de acesso (contas): menu do usuário logado — Django Admin #}
-    {# (só staff), troca de senha e sair — ou links de entrar/cadastrar. #}
+    {# Link único, visível a qualquer usuário logado (acréscimo da #}
+    {# reunião de 01/10/2026, item "Lista das obras" — confirmado com o #}
+    {# usuário em 01/10/2026): mesmo link, nome e destino mudam conforme #}
+    {# a permissão — "Gerenciar obras" (tela completa, Equipe Editorial) #}
+    {# ou "Lista de obras" (só as publicadas, qualquer um). Antes ficava #}
+    {# só dentro do menu "⋯", condicionado à permissão; agora é para #}
+    {# todos, por isso saiu de lá e entrou aqui, ao lado de "A turminha". #}
     {% if request.user.is_authenticated %}
-        <div class="navbar__menu">
-            <span class="navbar__usuario">{{ request.user.first_name|default:request.user.email }}</span>
-            {% if perms.obras.view_obra %}
-                <a href="{% url 'obras:obra_lista' %}">Gerenciar obras</a>
-            {% endif %}
-            {% if request.user.is_staff %}
-                <a href="{% url 'admin:index' %}">Admin</a>
-            {% endif %}
-            <a href="{% url 'contas:trocar_senha' %}">Trocar senha</a>
-            <form method="post" action="{% url 'contas:logout' %}" class="navbar__sair">
-                {% csrf_token %}
-                <button type="submit">Sair</button>
-            </form>
-        </div>
-    {% else %}
-        <div class="navbar__menu">
-            <a href="{% url 'contas:login' %}">Entrar</a>
-            <a href="{% url 'contas:cadastro' %}">Cadastre-se</a>
-        </div>
+        {% if perms.obras.view_obra %}
+            <a href="{% url 'obras:obra_lista' %}" class="navbar__link">Gerenciar obras</a>
+        {% else %}
+            <a href="{% url 'obras:obra_lista_publica' %}" class="navbar__link">Lista de obras</a>
+        {% endif %}
     {% endif %}
+
+    {# Menu suspenso (controle de acesso do app contas) à direita do #}
+    {# navbar, acionado pelo botão "⋯" — Django Admin (só staff), #}
+    {# trocar senha e sair, ou links de entrar/cadastrar quando deslogado. #}
+    {# Implementado com <details>/<summary> nativos do HTML, sem JS. #}
+    <details class="navbar__menu-suspenso">
+        <summary class="navbar__menu-botao" aria-label="Abrir menu">&bull;&bull;&bull;</summary>
+        <div class="navbar__menu-conteudo">
+            {% if request.user.is_authenticated %}
+                <span class="navbar__usuario">{{ request.user.first_name|default:request.user.email }}</span>
+                {% if request.user.is_staff %}
+                    <a href="{% url 'admin:index' %}">Admin</a>
+                {% endif %}
+                <a href="{% url 'contas:trocar_senha' %}">Trocar senha</a>
+                <form method="post" action="{% url 'contas:logout' %}" class="navbar__sair">
+                    {% csrf_token %}
+                    <button type="submit">Sair</button>
+                </form>
+            {% else %}
+                <a href="{% url 'contas:login' %}">Entrar</a>
+                <a href="{% url 'contas:cadastro' %}">Cadastre-se</a>
+            {% endif %}
+        </div>
+    </details>
 </nav>

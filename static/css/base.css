@@ -19,6 +19,14 @@
     --cor-texto: #39404A;       /* chumbo escuro — texto principal e botões pequenos */
     --cor-secundaria: #4B576B;  /* azul-acinzentado — links, botões secundários */
     --cor-texto-claro: #FCEECC; /* texto claro sobre fundos escuros (ex.: botão primário) */
+
+    /* Cores acrescentadas em 01/10/2026 (documento Turma_da_Gurizadinha_Cores.pdf,
+       reunião com a cliente) — usadas nos elementos novos da Fase 5 (home
+       redesenhada, glossário, botões de navegação da obra). */
+    --cor-amarelo-claro: #FCDB58;  /* divisor ondulado da Home (tom claro) */
+    --cor-laranja-claro: #F6E7C1;  /* fundo da caixa do Glossário Gauchês */
+    --cor-laranja-apagado: #DDB14F; /* borda do quadrado do Glossário Gauchês */
+    --cor-azul-ciano: #23B7BE;     /* botão "Acessar Obra" e downloads de PDF */
 }
 
 * {
@@ -72,23 +80,86 @@ a:hover {
     color: var(--cor-texto);
 }
 
+/* "Quem somos", "A turminha" e "Gerenciar obras"/"Lista de obras" — fonte
+   de título (Boogaloo) a pedido da cliente (01/10/2026); font-size
+   explícito em 1rem para manter o tamanho atual (o mesmo herdado do
+   body antes desta regra existir). */
+.navbar__link {
+    font-family: "Boogaloo", cursive;
+    font-size: 1.25rem;
+}
+
 /* Logomarca oficial (Manual de Marca, recebido 25/09/2026) — altura fixa
-   para caber no navbar; a largura acompanha a proporção da imagem. */
+   para caber no navbar; a largura acompanha a proporção da imagem.
+   Trocada em 01/10/2026 pela versão sem os personagens
+   (static/img/marcas/marca-principal.png, bem mais larga que alta),
+   por isso a altura foi reduzida em relação à logo antiga. */
 .navbar__logo {
-    height: 6.0rem; /* Ajuste conforme o tamanho do navbar */
+    height: 4.2rem; /* Ajuste conforme o tamanho do navbar */
     width: auto;
     display: block;
 }
 
-/* Menu do usuário (contas) — Django Admin (staff), trocar senha, sair;
-   ou Entrar/Cadastre-se quando deslogado. Login é obrigatório no resto
-   do site (ver config/settings.py, LoginRequiredMiddleware). */
-.navbar__menu {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+/* Menu suspenso do usuário (contas), acionado pelo botão "⋯" à direita
+   do navbar — ajuste de 01/10/2026 a pedido da cliente (antes os links
+   ficavam todos soltos no navbar). Implementado com <details>/<summary>
+   nativos do HTML (sem JS): o próprio navegador cuida de abrir/fechar
+   ao clicar no botão. */
+.navbar__menu-suspenso {
     margin-left: auto;
+    position: relative;
+}
+
+.navbar__menu-botao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 999px;
+    list-style: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    letter-spacing: 0.1em;
+    color: var(--cor-texto);
+    background: rgba(57, 64, 74, 0.12);
+    user-select: none;
+}
+
+.navbar__menu-botao:hover {
+    background: rgba(57, 64, 74, 0.2);
+}
+
+/* Remove o marcador padrão (triângulo/seta) do <summary> em todos os
+   navegadores — Chrome/Edge/Safari usam o pseudo-elemento
+   ::-webkit-details-marker, Firefox usa ::marker (display:none, não
+   content:"", que em alguns navegadores não basta para escondê-lo). */
+.navbar__menu-botao::-webkit-details-marker {
+    display: none;
+}
+
+.navbar__menu-botao::marker {
+    display: none;
+    content: "";
+}
+
+.navbar__menu-conteudo {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+    min-width: 200px;
+    padding: 1rem 1.2rem;
+    background: var(--cor-card);
+    border: 1px solid var(--cor-destaque);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     font-size: 0.9rem;
+    z-index: 50;
 }
 
 .navbar__usuario {
@@ -170,6 +241,21 @@ a:hover {
 .btn--perigo {
     background: #d64545;
     color: #fff;
+}
+
+/* Botão azul ciano — "Acessar Obra" (card da Home) e downloads de PDF
+   (Resumo/Atividade), conforme Turma_da_Gurizadinha_Cores.pdf (01/10/2026). */
+.btn--ciano {
+    background: var(--cor-azul-ciano);
+    color: #fff;
+}
+
+/* Variante compacta — "Acessar Obra" dentro de uma linha de tabela
+   (obras/_tabela_obras.html, Lista de obras), onde o botão de tamanho
+   normal fica grande demais. */
+.btn--pequeno {
+    padding: 0.35rem 0.9rem;
+    font-size: 0.85rem;
 }
 
 /* Cadastro de conteúdo fora do Admin (obras/templates/obras/gestao/) */
@@ -295,6 +381,38 @@ a:hover {
     background: rgba(75, 87, 107, 0.08);
 }
 
+/* Busca de obras (texto + categoria) — acréscimo da reunião de
+   01/10/2026, compartilhada por "Gerenciar obras" e "Lista de obras"
+   (obras/_busca_obras.html). Fica logo acima da tabela nas duas telas. */
+.busca-obras {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 1rem 0 1.5rem;
+}
+
+.busca-obras__texto {
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--cor-secundaria);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.busca-obras__categoria {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--cor-secundaria);
+    border-radius: 6px;
+    font: inherit;
+    background: #fff;
+}
+
+.busca-obras__limpar {
+    font-size: 0.9rem;
+}
+
 .container {
     max-width: 1100px;
     margin: 0 auto;
@@ -321,65 +439,97 @@ a:hover {
     color: var(--cor-texto);
 }
 
-/* Breve apresentação da plataforma (Home) — card em toda a largura, com
-   o texto de um lado e a logomarca oficial do outro (mesmo padrão visual
-   dos cards de "Quem somos", ver .quemsomos-card abaixo). */
-.apresentacao-secao {
-    margin-bottom: 2rem;
+/* "O que tu vais encontrar aqui" — nova apresentação da Home (ajuste de
+   01/10/2026, reunião com a cliente), conforme a página 1 do documento
+   Layout-Plataforma-Teste-01.pdf: título com linha de destaque, lista à
+   esquerda (com ícone de marcador) e a ilustração extraída do próprio
+   documento à direita. */
+.encontrar-aqui {
+    margin-bottom: 0;
+    text-align: center;
 }
 
-.apresentacao-card {
-    background: var(--cor-card);
-    border: 1px solid var(--cor-destaque);
-    border-radius: 12px;
-    padding: 1.75rem 2rem;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+.encontrar-aqui__titulo {
+    display: inline-block;
+    font-size: 2.2rem;
+    border-bottom: 2px solid var(--cor-destaque);
+    padding-bottom: 0.6rem;
+    margin: 0 auto 1.5rem;
+}
+
+.encontrar-aqui__conteudo {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
+    justify-content: center;
+    gap: 1.5rem;
+    text-align: left;
+    max-width: 760px;
+    margin: 0 auto;
 }
 
-.apresentacao-card__texto {
-    flex: 1;
+.encontrar-aqui__lista {
+    flex: 0 1 280px;
     min-width: 0;
-}
-
-.apresentacao-card__texto h2 {
-    margin-top: 0;
-}
-
-.apresentacao-card__texto ul {
+    list-style: none;
     margin: 0;
-    padding-left: 1.2rem;
-    line-height: 1.6;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    font-size: 1.15rem;
 }
 
-.apresentacao-card__logo {
-    height: 8rem;
-    width: auto;
+.encontrar-aqui__lista li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.encontrar-aqui__lista li::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 1em;
+    height: 1.2em;
+    background: var(--cor-azul-ciano);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+}
+
+.encontrar-aqui__ilustracao {
+    max-width: 440px;
+    width: 100%;
+    height: auto;
     flex-shrink: 0;
 }
 
 @media (max-width: 900px) {
-    .apresentacao-card {
-        flex-direction: column-reverse;
-        text-align: center;
+    .encontrar-aqui__titulo {
+        font-size: 1.6rem;
     }
 
-    .apresentacao-card__texto ul {
-        text-align: left;
+    .encontrar-aqui__conteudo {
+        flex-direction: column;
+        gap: 1.5rem;
+        max-width: 100%;
     }
 
-    .apresentacao-card__logo {
-        height: 6rem;
+    .encontrar-aqui__lista {
+        flex-basis: auto;
+    }
+
+    .encontrar-aqui__ilustracao {
+        max-width: 80%;
     }
 }
 
-.apresentacao-transicao {
-    font-style: italic;
-    color: var(--cor-secundaria);
-    margin: 0 0 0.5rem;
+/* Divisor ondulado em dois tons de amarelo, entre a apresentação e a
+   grade de obras (mesma página do documento). Espessura aumentada em
+   01/10/2026 a pedido da cliente, para ficar mais parecido com o
+   documento Layout-Plataforma-Teste-01.pdf. */
+.divisor-ondulado {
+    display: block;
+    width: 100%;
+    height: 110px;
+    margin: 1.5rem 0 2rem;
 }
 
 .obras-grid {
@@ -394,13 +544,22 @@ a:hover {
     }
 }
 
+/* Cards da Home (ajuste de 01/10/2026): retangulares, com as linhas
+   levemente convexas (não mais o formato ovalado/"amendoado" da
+   primeira versão, que a cliente achou parecido com ovo de páscoa — ver
+   Layout-Plataforma-Teste-01.pdf), cantos arredondados recortando a
+   imagem no topo (overflow: hidden), que ocupa cerca de 60% da área do
+   card; título sem link, breve texto e o botão azul ciano "Acessar
+   Obra" (#23B7BE) por baixo. */
 .obra-card {
     border: 1px solid var(--cor-destaque);
-    border-radius: 8px;
-    padding: 1rem;
+    border-radius: 28px;
+    overflow: hidden;
     background: var(--cor-card);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
     transition: box-shadow 0.15s ease, transform 0.15s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .obra-card:hover {
@@ -408,22 +567,73 @@ a:hover {
     transform: translateY(-2px);
 }
 
-/* Página da obra (detalhe.html) — capa em tamanho maior. Sem isso, uma
-   imagem enviada em resolução muito alta (ex.: foto direto da câmera)
+.obra-card__imagem {
+    height: 230px;
+    flex-shrink: 0;
+    background: rgba(75, 87, 107, 0.12);
+}
+
+.obra-card__imagem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.obra-card__corpo {
+    padding: 1.2rem 1.5rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.obra-card__titulo {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.obra-card__texto {
+    margin: 0;
+    flex: 1;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.obra-card__acessar {
+    align-self: center;
+    margin-top: 0.4rem;
+}
+
+/* Página da obra (detalhe.html) — capa em tamanho maior, centralizada
+   (pedido da cliente em 01/10/2026). Sem o max-width, uma imagem
+   enviada em resolução muito alta (ex.: foto direto da câmera)
    ultrapassa a largura do .container e quebra o layout da página. */
 .obra-capa {
-    max-width: 100%;
+    max-width: 90%;
     height: auto;
     display: block;
+    margin: 0 auto 1.5rem;
+    /* Cantos arredondados + sombra nas bordas direita/inferior, como no
+       print do documento Layout-Plataforma-Teste-01.pdf (pedido do
+       usuário em 01/10/2026) — offset só pra baixo e pra direita, não
+       uma sombra centralizada como as demais do site. */
+    border-radius: 20px;
+    box-shadow: 10px 12px 20px rgba(0, 0, 0, 0.25);
 }
 
 /* Texto completo da obra — mais espaçamento entre linhas e entre
    parágrafos do que o padrão do navegador, para ficar confortável de ler
-   num texto longo (pedido da cliente em 28/09/2026). */
+   num texto longo (pedido da cliente em 28/09/2026). Largura de até 90%
+   da área da página, centralizado (ajuste de 01/10/2026, substituindo o
+   limite anterior de 80ch). */
 .obra-texto {
-    max-width: 80ch;
+    max-width: 90%;
+    margin: 0 auto 2rem;
     line-height: 1.8;
-    margin-bottom: 2rem;
+    /* Pedido da cliente em reunião de 01/10/2026 — ver página 2 do
+       documento Layout-Plataforma-Teste-01.pdf. */
+    text-align: justify;
 }
 
 .obra-texto p {
@@ -443,6 +653,126 @@ a:hover {
     font-weight: normal;
     font-size: 1.2rem;
     color: var(--cor-texto);
+}
+
+/* Glossário Gauchês — fora do texto, em destaque (acréscimo acordado em
+   reunião com a cliente de 01/10/2026, página 2 do documento
+   Layout-Plataforma-Teste-01.pdf): fundo laranja claro e borda esquerda
+   em laranja apagado (cores do documento Turma_da_Gurizadinha_Cores.pdf). */
+.obra-glossario {
+    /* Fundo trocado para --cor-amarelo-claro (#FCDB58) a pedido do
+       usuário (01/10/2026) — mais saliente que o fundo do template
+       (--cor-fundo, #FCEECC) do que a laranja-claro usada antes. */
+    background: var(--cor-amarelo-claro);
+    border-left: 6px solid var(--cor-laranja-apagado);
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    margin: 0 0 2rem;
+    max-width: 80ch;
+}
+
+.obra-glossario__titulo {
+    margin: 0 0 0.6rem;
+}
+
+.obra-glossario__lista {
+    margin: 0;
+    padding-left: 1.2rem;
+    line-height: 1.6;
+}
+
+/* Tópicos para o professor (página de Resumo da obra) — mesma largura
+   de leitura confortável do texto completo. */
+.obra-topicos {
+    max-width: 80ch;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+}
+
+/* Botões de navegação Resumo/Atividade/Quiz interativo — levam às
+   páginas próprias de cada seção (rotas separadas, acréscimo de
+   01/10/2026), estilo "aba" conforme a página 2 do documento. */
+.obra-navegacao {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0 0 2rem;
+}
+
+.obra-navegacao__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--cor-card);
+    border: 1px solid var(--cor-destaque);
+    border-radius: 10px;
+    padding: 0.7rem 1.4rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    text-decoration: none;
+    color: var(--cor-texto);
+    font-weight: bold;
+}
+
+.obra-navegacao__item:hover {
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.14);
+    color: var(--cor-texto);
+}
+
+.obra-navegacao__icone {
+    width: 0.9em;
+    height: 1.1em;
+    background: var(--cor-azul-ciano);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+    flex-shrink: 0;
+}
+
+/* Download do PDF de Resumo/Atividade — mesmo padrão de botão azul ciano
+   usado no "Acessar Obra" dos cards da Home. */
+.obra-pdf__baixar {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+/* Páginas de Resumo e Atividade (layout de 02/10/2026, página 2 do
+   Layout-Plataforma-Teste-01.pdf): o conteúdo num quadro no mesmo molde
+   do Glossário Gauchês — o quadro usa a própria classe .obra-glossario
+   (fundo, borda esquerda, cantos, largura), e .obra-quadro só acrescenta
+   o que é específico destas páginas. */
+
+/* O .container encolhe até a largura do conteúdo em páginas curtas
+   (body é flex em coluna) e fica centralizado; nestas páginas ele ocupa a
+   largura toda, para o quadro ficar alinhado à esquerda, como no
+   documento. */
+.pagina-quadro .container {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.obra-quadro__titulo {
+    font-size: 1.4rem;
+}
+
+.obra-quadro__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 1.2rem 0 0;
+}
+
+.obra-quadro__acoes .obra-pdf__baixar {
+    margin-bottom: 0;
+}
+
+/* <button> não herda a fonte da página por padrão — iguala o "Imprimir
+   atividades" ao link "Baixar ... (PDF)" ao lado. */
+.obra-quadro__acoes .btn {
+    font: inherit;
+    font-weight: bold;
+}
+
+.obra-atividades__lista > li {
+    margin-bottom: 0.6rem;
 }
 
 /* Página "Quem somos" (obras/templates/obras/quem_somos.html) — cards com
@@ -551,6 +881,22 @@ a:hover {
    ilustração-base do personagem do outro (sem variações/expressões/
    acessórios — fundo já removido, ver static/img/personagens/a_turminha/).
    Mesmo padrão visual dos cards de "Quem somos" (.quemsomos-card). */
+/* Apresentação no topo de "A Turminha" (ajuste de 02/10/2026): arte
+   "Quem faz parte da Turminha" (static/img/apresentacao-turminha.png,
+   fundo transparente), centralizada, seguida do mesmo divisor ondulado
+   da Home (.divisor-ondulado). */
+.turminha-apresentacao {
+    text-align: center;
+}
+
+.turminha-apresentacao__imagem {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 0 auto;
+}
+
 .turminha-secao {
     margin-bottom: 1.5rem;
 }
@@ -629,17 +975,11 @@ a:hover {
 }
 
 /* Atividades de apoio para impressão (página da obra) */
+/* Botão "Imprimir atividades" — herda o estilo azul ciano de .btn--ciano
+   (padrão "Acessar Obra", pedido da cliente em 01/10/2026); aqui só o
+   que é específico dele (esconder ao imprimir, ver @media print abaixo). */
 .obra-atividades__imprimir {
-    padding: 0.5rem 1rem;
     cursor: pointer;
-}
-
-/* Download do PDF de atividade de apoio (acréscimo à Fase 6, 28/09/2026) —
-   convive com as perguntas cadastradas acima; some na impressão (ver
-   @media print abaixo), já que ali o que sai no papel são as perguntas. */
-.obra-atividades__baixar {
-    display: inline-block;
-    margin-bottom: 1rem;
 }
 
 /* Lista de alternativas das atividades de apoio — quadrado vazio antes
@@ -672,17 +1012,15 @@ a:hover {
         display: none;
     }
 
-    /* Ao imprimir a partir da página da obra, só a seção de atividades de
-       apoio sai no papel — sem gabarito (regra de template, ver
-       obras/templates/obras/detalhe.html) e sem o resto da página. */
-    .obra-texto-breve,
-    .obra-capa,
-    .obra-texto,
-    .obra-categoria,
-    .obra-topicos,
-    .obra-acoes,
-    .obra-atividades__imprimir,
-    .obra-atividades__baixar {
+    /* Ao imprimir a partir da página de Atividade (obras/templates/obras/
+       atividade.html, rota própria desde 01/10/2026), só a lista de
+       perguntas sai no papel — sem gabarito (regra de view, não de CSS;
+       Alternativa.correta nunca é exibida no template), sem cabeçalho,
+       sem o botão de baixar PDF, sem o de imprimir e sem o link de voltar. */
+    .pagina-atividade .obra-atividades__titulo,
+    .pagina-atividade .obra-pdf__baixar,
+    .pagina-atividade .obra-atividades__imprimir,
+    .pagina-atividade .obra-atividades__voltar {
         display: none;
     }
 

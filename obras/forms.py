@@ -4,7 +4,7 @@ from django.utils.text import slugify
 
 from .models import (
     Alternativa, Obra, PaginaATurminha, PaginaQuemSomos,
-    PersonagemATurminha, Questao, ValorQuemSomos,
+    PersonagemATurminha, Questao, TermoGlossario, ValorQuemSomos,
 )
 
 
@@ -25,7 +25,7 @@ class ObraForm(forms.ModelForm):
             "titulo", "categoria", "slug", "ilustrador", "capa", "imagem_pagina",
             "texto_breve", "texto_completo", "topicos_resumo",
             "tempo_limite_segundos", "ordem", "publicada",
-            "atividade_pdf",
+            "atividade_pdf", "resumo_pdf",
         ]
         widgets = {
             "texto_completo": forms.Textarea(attrs={"rows": 8}),
@@ -69,6 +69,23 @@ AlternativaFormSet = inlineformset_factory(
     Questao, Alternativa,
     fields=("texto", "correta"),
     extra=2, can_delete=True,
+)
+
+# Glossário Gauchês — lista de termos/definições da obra, editável no
+# mesmo formulário (decisão da cliente em reunião de 01/10/2026). Ao
+# contrário dos demais formsets deste arquivo (extra=1, um item por
+# vez), o Glossário normalmente já nasce com vários termos — por isso
+# `extra=10`: dá pra preencher até 10 termos novos numa única vez,
+# antes mesmo do primeiro "Salvar" (pedido do usuário em 01/10/2026).
+# Linhas extras deixadas em branco são ignoradas (comportamento padrão
+# do Django para formsets com `empty_permitted`); se precisar de mais
+# de 10 de uma vez, é só salvar e reabrir a edição — aparecem outras
+# 10 em branco, além dos termos já salvos.
+TermoGlossarioFormSet = inlineformset_factory(
+    Obra, TermoGlossario,
+    fields=("termo", "definicao", "ordem"),
+    widgets={"definicao": forms.Textarea(attrs={"rows": 2})},
+    extra=10, can_delete=True,
 )
 
 

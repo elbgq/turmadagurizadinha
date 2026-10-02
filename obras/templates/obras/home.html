@@ -4,25 +4,35 @@
 
 {% block content %}
 
-{# Fase 5: breve apresentação da plataforma, no topo da Home — texto à #}
-{# esquerda e a logomarca oficial (mesma do navbar) à direita. #}
-<section class="apresentacao-secao">
-    <div class="apresentacao-card">
-        <div class="apresentacao-card__texto">
-            <h2>Breve apresentação da plataforma (O que você encontra aqui!):</h2>
-            <ul>
-                <li>Obra completa;</li>
-                <li>Resumo para o professor usar em sala de aula;</li>
-                <li>Atividade de apoio;</li>
-                <li>Quiz.</li>
-            </ul>
-        </div>
-        <img src="{% static 'img/turma-da-gurizadinha-logo.png' %}" alt="Turma da Gurizadinha" class="apresentacao-card__logo">
+{# Fase 5 (ajuste de 01/10/2026, reunião com a cliente): nova apresentação #}
+{# da Home conforme a página 1 do Layout-Plataforma-Teste-01.pdf — texto em #}
+{# lista à esquerda e a ilustração "O que tu vais encontrar aqui" extraída #}
+{# do próprio documento, à direita. #}
+<section class="encontrar-aqui">
+    <h2 class="encontrar-aqui__titulo">O que tu vais encontrar aqui:</h2>
+    <div class="encontrar-aqui__conteudo">
+        <ul class="encontrar-aqui__lista">
+            <li>Obra completa</li>
+            <li>Resumos</li>
+            <li>Atividades</li>
+            <li>Quiz interativo</li>
+        </ul>
+        <img
+            src="{% static 'img/home/ilustracao-encontrar-aqui.png' %}"
+            alt="Turminha reunida embaixo das árvores, lendo e observando a natureza"
+            class="encontrar-aqui__ilustracao"
+        >
     </div>
 </section>
 
+{# Divisor ondulado em dois tons de amarelo, separando a apresentação da #}
+{# grade de obras (página 1 do documento). #}
+<svg class="divisor-ondulado" viewBox="0 0 1024 90" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,70 C 180,10 340,85 520,45 C 700,8 860,60 1024,20 L1024,90 L0,90 Z" fill="var(--cor-amarelo-claro)"></path>
+    <path d="M0,55 C 200,90 360,15 560,55 C 760,92 880,30 1024,50 L1024,90 L0,90 Z" fill="var(--cor-destaque)"></path>
+</svg>
 
-<h1>Histórias Infantis</h1>
+<h1>Obras disponíveis</h1>
 
 {# Cadastro de conteúdo fora do Admin (ver README) — só aparece para quem #}
 {# tem permissão de cadastro (grupo "Equipe editorial" ou superusuário). #}
@@ -30,13 +40,22 @@
     <p><a class="btn" href="{% url 'obras:obra_lista' %}">Cadastrar obra</a></p>
 {% endif %}
 
-{# Fase 5: grade de cards (4 ou 6 colunas), cada card com ilustração + texto estilo blog #}
+{# Fase 5 (ajuste de 01/10/2026): cards em formato "amendoado", com a #}
+{# imagem ocupando ~60% da área, título sem link, breve texto e o botão #}
+{# azul (#23B7BE) "Acessar Obra" — ver .obra-card em base.css. #}
 <div class="obras-grid">
     {% for obra in obras %}
         <article class="obra-card">
-            {% if obra.capa %}<img src="{{ obra.capa.url }}" alt="Capa de {{ obra.titulo }}" style="max-width:100%;">{% endif %}
-            <a href="{% url 'obras:detalhe' obra.slug %}">{{ obra.titulo }}</a>
-            {% if obra.texto_breve %}<p>{{ obra.texto_breve }}</p>{% endif %}
+            <div class="obra-card__imagem">
+                {% if obra.capa %}
+                    <img src="{{ obra.capa.url }}" alt="Capa de {{ obra.titulo }}">
+                {% endif %}
+            </div>
+            <div class="obra-card__corpo">
+                <h2 class="obra-card__titulo">{{ obra.titulo }}</h2>
+                {% if obra.texto_breve %}<p class="obra-card__texto">{{ obra.texto_breve }}</p>{% endif %}
+                <a class="btn btn--ciano obra-card__acessar" href="{% url 'obras:detalhe' obra.slug %}">Acessar Obra</a>
+            </div>
         </article>
     {% empty %}
         <p>Nenhuma obra publicada ainda. Elas aparecerão aqui a partir da carga das 30 obras (Fase 8).</p>

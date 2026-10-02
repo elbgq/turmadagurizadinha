@@ -58,6 +58,36 @@
         {% endfor %}
     {% endif %}
 
+    {% if glossario_formset %}
+        <h2>Glossário Gauchês</h2>
+        <p>Termos do vocabulário regional usados no texto, com sua definição — aparecem em destaque na página da obra, fora do texto principal.</p>
+        {{ glossario_formset.management_form }}
+        {% for termo_form in glossario_formset %}
+            <fieldset class="form__questao">
+                {{ termo_form.id }}
+                {{ termo_form.non_field_errors }}
+                {% if not termo_form.instance.pk %}
+                    <p class="form__novo-enunciado">Novo termo</p>
+                {% endif %}
+                <div class="form__campo">
+                    <label for="{{ termo_form.termo.id_for_label }}">Termo</label>
+                    {{ termo_form.termo }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ termo_form.definicao.id_for_label }}">Definição</label>
+                    {{ termo_form.definicao }}
+                </div>
+                <div class="form__campo">
+                    <label for="{{ termo_form.ordem.id_for_label }}">Ordem</label>
+                    {{ termo_form.ordem }}
+                </div>
+                {% if termo_form.DELETE %}
+                    <label class="form__excluir">{{ termo_form.DELETE }} Excluir este termo</label>
+                {% endif %}
+            </fieldset>
+        {% endfor %}
+    {% endif %}
+
     <button type="submit" class="btn">Salvar</button>
 </form>
 

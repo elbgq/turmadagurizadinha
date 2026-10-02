@@ -53,6 +53,16 @@ class Obra(models.Model):
             "(acréscimo à Fase 6, pedido pela cliente em 28/09/2026)."
         ),
     )
+    resumo_pdf = models.FileField(
+        upload_to="obras/resumos/", blank=True, null=True,
+        validators=[FileExtensionValidator(["pdf"]), validar_pdf],
+        verbose_name="Resumo para o professor (PDF)",
+        help_text=(
+            "Opcional. Um arquivo PDF de até 10 MB, disponível para download "
+            "na página de Resumo da obra, além do texto em 'Tópicos para o "
+            "professor' (acréscimo acordado em reunião de 01/10/2026)."
+        ),
+    )
 
     # Subtítulo/breve descrição — usado no card da Home e no topo da
     # página da obra (esboço enviado pela cliente).
@@ -77,6 +87,22 @@ class Obra(models.Model):
 
     def __str__(self):
         return self.titulo
+
+    @property
+    def topicos_resumo_lista(self):
+        """
+        Tópicos do resumo como lista, um por linha — para exibir em
+        tópicos (<li>) no quadro da página de Resumo (layout de 02/10/2026,
+        página 2 do Layout-Plataforma-Teste-01.pdf). Tira os marcadores
+        que a equipe costuma digitar no início da linha ("-", "•", "*") e
+        ignora linhas vazias ou só com o marcador.
+        """
+        topicos = []
+        for linha in (self.topicos_resumo or "").splitlines():
+            texto = linha.strip().lstrip("-•*").strip()
+            if texto:
+                topicos.append(texto)
+        return topicos
 
 
 class Questao(models.Model):
@@ -112,6 +138,30 @@ class Alternativa(models.Model):
 
     def __str__(self):
         return self.texto[:60]
+
+
+class TermoGlossario(models.Model):
+    """
+    Um termo do "Glossário Gauchês" de uma Obra — vocabulário regional
+    usado no texto, com sua definição. Exibido em destaque, fora do
+    texto principal, na página de detalhe da obra (acréscimo acordado
+    em reunião com a cliente de 01/10/2026). Editável pela equipe
+    editorial via formset inline na tela de gestão da obra, no mesmo
+    padrão de ValorQuemSomos/PersonagemATurminha.
+    """
+
+    obra = models.ForeignKey(Obra, on_delete=models.CASCADE, related_name="termos_glossario")
+    termo = models.CharField(max_length=100)
+    definicao = models.TextField()
+    ordem = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Termo do Glossário"
+        verbose_name_plural = "Glossário Gauchês"
+        ordering = ["ordem", "id"]
+
+    def __str__(self):
+        return self.termo
 
 
 # --------------------------------------------------------------------

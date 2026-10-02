@@ -5,9 +5,34 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import (
     AlternativaFormSet, ObraForm, PaginaATurminhaForm, PaginaQuemSomosForm,
-    PersonagemATurminhaFormSet, QuestaoFormSet, ValorQuemSomosFormSet,
+    PersonagemATurminhaFormSet, QuestaoFormSet, TermoGlossarioFormSet,
+    ValorQuemSomosFormSet,
 )
 from .models import Obra, PaginaATurminha, PaginaQuemSomos, Questao
+
+
+def _filtrar_obras_por_busca(request, queryset):
+    """
+    Aplica o filtro de busca (texto no título + categoria) a partir dos
+    parâmetros de URL (?q=...&categoria=...) — usado tanto por
+    obra_lista (gestão) quanto por obra_lista_publica (acréscimo da
+    reunião de 01/10/2026, item "campo de busca", confirmado com o
+    usuário em 01/10/2026: formulário GET, texto livre + select de
+    categoria, compartilhado pelas duas telas).
+    """
+    q = request.GET.get("q", "").strip()
+    categoria = request.GET.get("categoria", "").strip()
+    if q:
+        queryset = queryset.filter(titulo__icontains=q)
+    if categoria:
+        queryset = queryset.filter(categoria=categoria)
+    contexto_busca = {
+        "q": q,
+        "categoria_selecionada": categoria,
+        "categorias": Obra.Categoria.choices,
+        "filtros_ativos": bool(q or categoria),
+    }
+    return queryset, contexto_busca
 
 
 def home(request):
@@ -54,14 +79,65 @@ def a_turminha(request):
 
 def detalhe_obra(request, slug):
     """
-    Fase 5: página da obra — texto completo rolável, quadro de tópicos
-    para o professor, atividades de apoio para impressão (perguntas
-    cadastradas na própria obra, sem gabarito — ver obras/models.py) e
-    acesso ao quiz.
+    Página da obra — texto completo rolável, categoria, Glossário
+    Gauchês em destaque (fora do texto — acréscimo acordado em reunião
+    de 01/10/2026) e os links para as páginas próprias de Resumo,
+    Atividade e Quiz Interativo (que antes eram seções dentro desta
+    mesma página — mudaram para rotas separadas na mesma reunião).
     """
     obra = get_object_or_404(Obra, slug=slug, publicada=True)
+    termos_glossario = obra.termos_glossario.all()
+    return render(
+        request, "obras/detalhe.html",
+        {"obra": obra, "termos_glossario": termos_glossario},
+    )
+
+
+def _obra_visivel_ou_404(slug, request):
+    """
+    Busca a obra pelo slug para as páginas de Resumo/Atividade/Quiz,
+    mesma regra de visibilidade do download de PDF (atividade_pdf/
+    resumo_pdf, abaixo): publicada, ou quem tem permissão de gestão de
+    conteúdo (obras.view_obra) também pode acessar uma obra ainda não
+    publicada (para conferir antes de publicar).
+    """
+    obra = get_object_or_404(Obra, slug=slug)
+    if not obra.publicada and not request.user.has_perm("obras.view_obra"):
+        raise Http404
+    return obra
+
+
+def obra_resumo(request, slug):
+    """
+    Página própria de "Resumo" da obra — tópicos para o professor usar
+    em sala de aula, em texto, com um PDF opcional para download
+    (acréscimo acordado em reunião com a cliente de 01/10/2026).
+    """
+    obra = _obra_visivel_ou_404(slug, request)
+    return render(request, "obras/resumo.html", {"obra": obra})
+
+
+def obra_atividade(request, slug):
+    """
+    Página própria de "Atividade" da obra — perguntas cadastradas (sem
+    gabarito) e/ou PDF de atividade de apoio para impressão. Antes era
+    uma seção dentro de obras/detalhe.html; passou a ter rota e
+    template próprios (acréscimo de 01/10/2026).
+    """
+    obra = _obra_visivel_ou_404(slug, request)
     questoes = obra.questoes.prefetch_related("alternativas")
-    return render(request, "obras/detalhe.html", {"obra": obra, "questoes": questoes})
+    return render(request, "obras/atividade.html", {"obra": obra, "questoes": questoes})
+
+
+def obra_quiz(request, slug):
+    """
+    Página própria de "Quiz Interativo" da obra — só a porta de entrada
+    para a lógica do quiz, que é da Fase 7 (ainda placeholder em
+    quiz/views.py). Decisão da cliente em 01/10/2026: este botão não
+    tem lógica própria aqui, só os links para quiz:quiz/quiz:resultado.
+    """
+    obra = _obra_visivel_ou_404(slug, request)
+    return render(request, "obras/quiz.html", {"obra": obra})
 
 
 def atividade_pdf(request, slug):
@@ -73,15 +149,30 @@ def atividade_pdf(request, slug):
     permissão de gestão de conteúdo (obras.view_obra) também pode baixar
     de uma obra ainda não publicada.
     """
-    obra = get_object_or_404(Obra, slug=slug)
-    if not obra.publicada and not request.user.has_perm("obras.view_obra"):
-        raise Http404
+    obra = _obra_visivel_ou_404(slug, request)
     if not obra.atividade_pdf:
         raise Http404
     return FileResponse(
         obra.atividade_pdf.open("rb"),
         as_attachment=True,
         filename=f"{obra.slug}-atividade.pdf",
+        content_type="application/pdf",
+    )
+
+
+def resumo_pdf(request, slug):
+    """
+    Download do PDF de "Resumo para o professor" da obra (acréscimo
+    acordado em reunião de 01/10/2026) — mesmo padrão de atividade_pdf
+    acima.
+    """
+    obra = _obra_visivel_ou_404(slug, request)
+    if not obra.resumo_pdf:
+        raise Http404
+    return FileResponse(
+        obra.resumo_pdf.open("rb"),
+        as_attachment=True,
+        filename=f"{obra.slug}-resumo.pdf",
         content_type="application/pdf",
     )
 
@@ -97,9 +188,44 @@ def atividade_pdf(request, slug):
 
 @permission_required("obras.view_obra", raise_exception=True)
 def obra_lista(request):
-    """Lista de todas as obras (publicadas ou não) para gestão de conteúdo."""
-    obras = Obra.objects.all()
-    return render(request, "obras/gestao/lista.html", {"obras": obras})
+    """
+    Lista de todas as obras (publicadas ou não) para gestão de conteúdo.
+
+    Colunas desde 01/10/2026: Título, Publicada, Categoria e Ações — a
+    coluna "Ordem" saiu da tabela (decisão da cliente; o campo continua
+    no formulário de editar obra, para quem precisar ajustá-lo
+    manualmente) e "Categoria" entrou. Ver também obra_lista_publica,
+    a versão desta mesma tela para quem não tem permissão de gestão.
+    """
+    obras, contexto_busca = _filtrar_obras_por_busca(request, Obra.objects.all())
+    return render(
+        request, "obras/gestao/lista.html",
+        {"obras": obras, "mostrar_publicada": True, "mostrar_acoes_gestao": True, **contexto_busca},
+    )
+
+
+def obra_lista_publica(request):
+    """
+    Lista pública de obras publicadas (acréscimo da reunião de
+    01/10/2026, item 4) — qualquer usuário logado pode acessar, sem
+    precisar da permissão `obras.view_obra` da Equipe Editorial (o
+    login em si já é exigido pelo LoginRequiredMiddleware em todo o
+    site, por isso não há decorator de permissão aqui).
+
+    Mesmas colunas de "Gerenciar obras" (Título, Categoria, Ações),
+    exceto "Publicada" — redundante aqui, já que só entram obras com
+    `publicada=True` — e só a ação "Acessar Obra" (sem Editar/Excluir).
+    Reaproveita o mesmo parcial de tabela (`obras/_tabela_obras.html`)
+    e de busca (`obras/_busca_obras.html`) de obra_lista, variando só o
+    queryset base e os mostrar_* do contexto.
+    """
+    obras, contexto_busca = _filtrar_obras_por_busca(
+        request, Obra.objects.filter(publicada=True)
+    )
+    return render(
+        request, "obras/lista_publica.html",
+        {"obras": obras, "mostrar_publicada": False, "mostrar_acoes_gestao": False, **contexto_busca},
+    )
 
 
 @permission_required("obras.add_obra", raise_exception=True)
@@ -121,17 +247,20 @@ def obra_editar(request, pk):
     if request.method == "POST":
         form = ObraForm(request.POST, request.FILES, instance=obra)
         formset = QuestaoFormSet(request.POST, instance=obra)
-        if form.is_valid() and formset.is_valid():
+        glossario_formset = TermoGlossarioFormSet(request.POST, instance=obra, prefix="glossario")
+        if form.is_valid() and formset.is_valid() and glossario_formset.is_valid():
             form.save()
             formset.save()
+            glossario_formset.save()
             messages.success(request, f'Obra "{obra.titulo}" atualizada.')
             return redirect("obras:obra_editar", pk=obra.pk)
     else:
         form = ObraForm(instance=obra)
         formset = QuestaoFormSet(instance=obra)
+        glossario_formset = TermoGlossarioFormSet(instance=obra, prefix="glossario")
     return render(
         request, "obras/gestao/obra_form.html",
-        {"form": form, "formset": formset, "obra": obra},
+        {"form": form, "formset": formset, "glossario_formset": glossario_formset, "obra": obra},
     )
 
 

@@ -11,9 +11,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {# ?v={% now 'U' %} (timestamp a cada requisição) força o navegador a #}
+    {# buscar o CSS mais recente sempre — evita o problema recorrente de o #}
+    {# navegador mostrar uma versão antiga do base.css em cache depois de um #}
+    {# ajuste (01/10/2026: aconteceu em pelo menos 2 rodadas de feedback). #}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}?v={% now 'U' %}">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     {% include "partials/navbar.html" %}
 
     <main class="container">

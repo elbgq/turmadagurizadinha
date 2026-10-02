@@ -1,0 +1,24 @@
+{# Formulário de busca de obras (texto no título + categoria), compartilhado #}
+{# por "Gerenciar obras" e "Lista de obras" — acréscimo da reunião de #}
+{# 01/10/2026 (item "campo de busca"), confirmado com o usuário em #}
+{# 01/10/2026: envio por GET (?q=...&categoria=...), pra ficar um link #}
+{# que dá pra compartilhar/favoritar e funcionar sem JavaScript. #}
+<form method="get" class="busca-obras">
+    <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Buscar por título"
+        class="busca-obras__texto"
+    >
+    <select name="categoria" class="busca-obras__categoria">
+        <option value="">Todas as categorias</option>
+        {% for valor, rotulo in categorias %}
+            <option value="{{ valor }}" {% if valor == categoria_selecionada %}selected{% endif %}>{{ rotulo }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn--ghost">Buscar</button>
+    {% if filtros_ativos %}
+        <a href="{{ request.path }}" class="busca-obras__limpar">Limpar filtros</a>
+    {% endif %}
+</form>

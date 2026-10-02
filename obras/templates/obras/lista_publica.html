@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Lista de obras{% endblock %}
+
+{# Lista pública de obras (acréscimo da reunião de 01/10/2026, item 4) — #}
+{# equivalente a "Gerenciar obras", mas aberta a qualquer usuário logado, #}
+{# sem a permissão da Equipe Editorial: só as obras já publicadas, sem a #}
+{# coluna "Publicada" (redundante aqui) e sem Editar/Excluir — só #}
+{# "Acessar Obra". Ver obras/views.py:obra_lista_publica. #}
+{% block content %}
+<h1>Lista de obras</h1>
+
+{% include "obras/_busca_obras.html" %}
+
+{% include "obras/_tabela_obras.html" %}
+{% endblock %}

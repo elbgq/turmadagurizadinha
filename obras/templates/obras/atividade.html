@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Atividade de apoio — {{ obra.titulo }}{% endblock %}
+{% block body_class %}pagina-atividade pagina-quadro{% endblock %}
+
+{% block content %}
+{# Layout de 02/10/2026 (página 2 do Layout-Plataforma-Teste-01.pdf): a #}
+{# atividade num quadro no mesmo molde do Glossário Gauchês #}
+{# (.obra-glossario + .obra-quadro, ver base.css). Sem botão nem seta no #}
+{# topo (ajuste de 02/10/2026: no documento eles só indicavam que o botão #}
+{# "Atividade" da página da obra leva até aqui). Conteúdo editável na #}
+{# gestão da obra. #}
+<section class="obra-glossario obra-quadro obra-atividades">
+    <h1 class="obra-glossario__titulo obra-quadro__titulo obra-atividades__titulo">Atividade de apoio: {{ obra.titulo }}</h1>
+
+    {% if questoes %}
+        <ul class="obra-glossario__lista obra-atividades__lista">
+            {% for questao in questoes %}
+                <li class="obra-atividades__questao">
+                    Exercício {{ forloop.counter }} - {{ questao.enunciado }}
+                    {% if questao.alternativas.all %}
+                        <ul class="obra-atividades__opcoes">
+                            {% for alternativa in questao.alternativas.all %}
+                                <li>{{ alternativa.texto }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% elif not obra.atividade_pdf %}
+        <p>Nenhuma atividade cadastrada para esta obra ainda.</p>
+    {% endif %}
+
+    {% if obra.atividade_pdf or questoes %}
+        <p class="obra-quadro__acoes">
+            {% if obra.atividade_pdf %}
+                <a class="btn btn--ciano obra-pdf__baixar" href="{% url 'obras:atividade_pdf' obra.slug %}">Baixar Atividade de Apoio (PDF)</a>
+            {% endif %}
+            {% if questoes %}
+                <button class="btn btn--ciano obra-atividades__imprimir" onclick="window.print()">Imprimir atividades</button>
+            {% endif %}
+        </p>
+    {% endif %}
+</section>
+
+<p class="obra-atividades__voltar"><a href="{% url 'obras:detalhe' obra.slug %}"> <- Voltar para a obra</a></p>
+{% endblock %}
