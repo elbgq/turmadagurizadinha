@@ -552,7 +552,7 @@ a:hover {
    card; título sem link, breve texto e o botão azul ciano "Acessar
    Obra" (#23B7BE) por baixo. */
 .obra-card {
-    border: 1px solid var(--cor-destaque);
+    border: 2px solid var(--cor-destaque);
     border-radius: 28px;
     overflow: hidden;
     background: var(--cor-card);
@@ -795,7 +795,7 @@ a:hover {
 
 .quemsomos-card {
     background: var(--cor-card);
-    border: 1px solid var(--cor-destaque);
+    border: 2px solid var(--cor-destaque);
     border-radius: 12px;
     padding: 1.75rem 2rem;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
@@ -903,7 +903,7 @@ a:hover {
 
 .turminha-card {
     background: var(--cor-card);
-    border: 1px solid var(--cor-destaque);
+    border: 2px solid var(--cor-destaque);
     border-radius: 12px;
     padding: 1.75rem 2rem;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
