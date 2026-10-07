@@ -1,3 +1,5 @@
 Django>=5.2,<5.3    # LTS — suporte de segurança até abr/2028
 Pillow>=10.0         # necessário para ImageField (upload de ilustrações — Fase 4)
 python-dotenv>=1.0   # carrega o .env local (SECRET_KEY etc. — ver .env.example)
+gunicorn>=26.0       # servidor de produção (Fase 10 — hospedagem); não roda no Windows, só no servidor
+whitenoise>=6.12     # serve os arquivos de static/ em produção (Fase 10 — hospedagem)
