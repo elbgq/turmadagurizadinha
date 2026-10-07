@@ -34,3 +34,6 @@ desktop.ini
 
 Claude outputs/*
 claude-setup/*
+
+# Vídeos de protótipo (não versionados)
+static/video/
