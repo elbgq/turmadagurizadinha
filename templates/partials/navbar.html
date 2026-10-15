@@ -1,11 +1,16 @@
 {% load static %}
-<nav class="navbar">
+{# Navbar em duas linhas (pedido da cliente, 14/10/2026): 1ª linha só a #}
+{# logomarca, centralizada sobre --cor-fundo; 2ª linha (o .navbar de #}
+{# sempre) com os links e o menu "⋯" sobre --cor-destaque. #}
+<div class="navbar-marca">
     <a href="{% url 'obras:home' %}" class="navbar__brand">
         {# Logomarca sem os personagens (Manual de Marca — versão "principal" #}
         {# de static/img/marcas/), trocada em 01/10/2026 a pedido da cliente. #}
         <img src="{% static 'img/marcas/marca-principal.png' %}" alt="Turma da Gurizadinha" class="navbar__logo">
     </a>
+</div>
 
+<nav class="navbar">
     <a href="{% url 'obras:quem_somos' %}" class="navbar__link">Quem somos</a>
     <a href="{% url 'obras:a_turminha' %}" class="navbar__link">A turminha</a>
 

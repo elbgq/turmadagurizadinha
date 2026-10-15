@@ -26,11 +26,8 @@
 </section>
 
 {# Divisor ondulado em dois tons de amarelo, separando a apresentação da #}
-{# grade de obras (página 1 do documento). #}
-<svg class="divisor-ondulado" viewBox="0 0 1024 90" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0,70 C 180,10 340,85 520,45 C 700,8 860,60 1024,20 L1024,90 L0,90 Z" fill="var(--cor-amarelo-claro)"></path>
-    <path d="M0,55 C 200,90 360,15 560,55 C 760,92 880,30 1024,50 L1024,90 L0,90 Z" fill="var(--cor-destaque)"></path>
-</svg>
+{# grade de obras (página 1 do documento) — ver partials/divisor_ondulado.html. #}
+{% include "partials/divisor_ondulado.html" %}
 
 <h1>Obras disponíveis</h1>
 

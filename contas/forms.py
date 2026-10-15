@@ -40,7 +40,10 @@ class CadastroForm(forms.Form):
             first_name=self.cleaned_data["nome"],
             password=self.cleaned_data["password1"],
         )
-        Perfil.objects.create(user=user, tipo=self.cleaned_data["tipo"])
+        # O Perfil já foi criado pelo sinal de contas/signals.py; aqui só
+        # grava o tipo escolhido no cadastro.
+        user.perfil.tipo = self.cleaned_data["tipo"]
+        user.perfil.save()
         return user
 
 
