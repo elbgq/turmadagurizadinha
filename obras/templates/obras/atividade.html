@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Atividade de apoio — {{ obra.titulo }}{% endblock %}
 {% block body_class %}pagina-atividade pagina-quadro{% endblock %}
 
@@ -10,17 +11,35 @@
 {# "Atividade" da página da obra leva até aqui). Conteúdo editável na #}
 {# gestão da obra. #}
 <section class="obra-glossario obra-quadro obra-atividades">
-    <h1 class="obra-glossario__titulo obra-quadro__titulo obra-atividades__titulo">Atividade de apoio: {{ obra.titulo }}</h1>
+    {# Cabeçalho da folha (sugestão de 21/10/2026, a partir do documento #}
+    {# "Avaliações – Ajustes para definição da estrutura"): logo, nome da #}
+    {# obra, espaço para Nome e Data e uma linha separando o questionário. #}
+    {# Sai na tela e na impressão. A logo é a versão monocromática branca #}
+    {# na tela (sobre o fundo amarelo do quadro); na impressão vira a preta, #}
+    {# porque a branca some no papel (ver @media print em base.css). #}
+    <header class="obra-atividades__cabecalho">
+        <img src="{% static 'img/marcas/marca-monocromatica-branca.png' %}" alt="Turma da Gurizadinha" class="obra-atividades__logo obra-atividades__logo--tela">
+        <img src="{% static 'img/marcas/marca-monocromatica-preta.png' %}" alt="Turma da Gurizadinha" class="obra-atividades__logo obra-atividades__logo--impressao">
+        <h1 class="obra-glossario__titulo obra-quadro__titulo obra-atividades__titulo">{{ obra.titulo }}</h1>
+        <p class="obra-atividades__identificacao">
+            <span>Nome: <span class="obra-atividades__campo obra-atividades__campo--nome"></span></span>
+            <span>Data: ____/____/________</span>
+        </p>
+    </header>
+    <hr class="obra-atividades__separador">
 
     {% if questoes %}
         <ul class="obra-glossario__lista obra-atividades__lista">
             {% for questao in questoes %}
                 <li class="obra-atividades__questao">
-                    Exercício {{ forloop.counter }} - {{ questao.enunciado }}
+                    <span class="obra-atividades__enunciado">Exercício {{ forloop.counter }} – {{ questao.enunciado }}</span>
                     {% if questao.alternativas.all %}
+                        {# Letras a), b), c)... geradas pela ordem de cadastro #}
+                        {# (contador CSS em .obra-atividades__opcoes), junto #}
+                        {# com o quadradinho para marcar. #}
                         <ul class="obra-atividades__opcoes">
                             {% for alternativa in questao.alternativas.all %}
-                                <li>{{ alternativa.texto }}</li>
+                                <li><span class="obra-atividades__letra"></span>{{ alternativa.texto }}</li>
                             {% endfor %}
                         </ul>
                     {% endif %}

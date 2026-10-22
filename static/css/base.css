@@ -790,6 +790,12 @@ a:hover {
     font-weight: bold;
 }
 
+.obra-atividades__lista {
+    /* Sem marcador: cada questão já começa com "Exercício N" (21/10/2026). */
+    list-style: none;
+    padding-left: 0;
+}
+
 .obra-atividades__lista > li {
     margin-bottom: 0.6rem;
 }
@@ -1001,12 +1007,59 @@ a:hover {
     cursor: pointer;
 }
 
+/* Cabeçalho da folha de atividade (sugestão de 21/10/2026): logo
+   centralizada, nome da obra, Nome/Data e linha separando o questionário.
+   A logo branca aparece na tela; a preta só na impressão (@media print). */
+.obra-atividades__cabecalho {
+    text-align: center;
+}
+
+.obra-atividades__logo {
+    display: block;
+    height: 4rem;
+    width: auto;
+    margin: 0 auto 0.6rem;
+}
+
+.obra-atividades__logo--impressao {
+    display: none;
+}
+
+.obra-atividades__identificacao {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem 2.5rem;
+    margin: 1rem 0 0;
+    font-weight: 600;
+}
+
+.obra-atividades__campo--nome {
+    display: inline-block;
+    width: 22rem;
+    max-width: 60vw;
+    border-bottom: 1px solid var(--cor-texto);
+    vertical-align: baseline;
+}
+
+.obra-atividades__separador {
+    border: 0;
+    border-top: 2px solid var(--cor-texto);
+    margin: 1.2rem 0 1.4rem;
+}
+
+.obra-atividades__enunciado {
+    font-weight: 600;
+}
+
 /* Lista de alternativas das atividades de apoio — quadrado vazio antes
-   de cada opção, para o aluno marcar a resposta no papel. */
+   de cada opção, para o aluno marcar a resposta no papel, seguido da
+   letra a), b), c)... (contador CSS, pela ordem de cadastro). */
 .obra-atividades__opcoes {
     list-style: none;
     margin: 0.4rem 0;
     padding: 0;
+    counter-reset: alternativa;
 }
 
 .obra-atividades__opcoes li {
@@ -1014,6 +1067,11 @@ a:hover {
     align-items: center;
     gap: 0.5rem;
     margin: 0.3rem 0;
+    counter-increment: alternativa;
+}
+
+.obra-atividades__letra::before {
+    content: counter(alternativa, lower-alpha) ")";
 }
 
 .obra-atividades__opcoes li::before {
@@ -1035,13 +1093,27 @@ a:hover {
     /* Ao imprimir a partir da página de Atividade (obras/templates/obras/
        atividade.html, rota própria desde 01/10/2026), só a lista de
        perguntas sai no papel — sem gabarito (regra de view, não de CSS;
-       Alternativa.correta nunca é exibida no template), sem cabeçalho,
-       sem o botão de baixar PDF, sem o de imprimir e sem o link de voltar. */
-    .pagina-atividade .obra-atividades__titulo,
+       Alternativa.correta nunca é exibida no template), sem o botão de
+       baixar PDF, sem o de imprimir e sem o link de voltar. Desde
+       21/10/2026 o cabeçalho da folha (logo, nome da obra, Nome/Data)
+       volta a sair no papel, com a logo preta no lugar da branca. */
+    .pagina-atividade .obra-atividades__logo--tela,
     .pagina-atividade .obra-pdf__baixar,
     .pagina-atividade .obra-atividades__imprimir,
     .pagina-atividade .obra-atividades__voltar {
         display: none;
+    }
+
+    .pagina-atividade .obra-atividades__logo--impressao {
+        display: block;
+    }
+
+    /* No papel, sem o fundo amarelo nem a borda do quadro. */
+    .pagina-atividade .obra-atividades {
+        background: none;
+        border: 0;
+        padding: 0;
+        max-width: none;
     }
 
     /* Evita que uma pergunta comece numa página e suas alternativas
