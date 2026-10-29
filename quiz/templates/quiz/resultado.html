@@ -1,7 +1,52 @@
 {% extends "base.html" %}
-{% block title %}Resultado do quiz{% endblock %}
+{% block title %}Relatório de desempenho — {{ obra.titulo }}{% endblock %}
+{% block body_class %}pagina-quadro{% endblock %}
 
 {% block content %}
-<h1>Relatório de desempenho</h1>
-<p>Módulo de quiz (placeholder) — a partir da Fase 7, mostra aqui o histórico de tentativas desta obra (model ResultadoQuiz, já implementado na Fase 4).</p>
+<section class="obra-glossario obra-quadro quiz-relatorio">
+    <h1 class="obra-quadro__titulo">Relatório de desempenho: {{ obra.titulo }}</h1>
+
+    {% if resultados %}
+        <p>Tuas tentativas neste quiz, da mais recente para a mais antiga.</p>
+        <table class="tabela-gestao">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Acertos</th>
+                    {% if ve_porcentagem %}<th>%</th><th>Tempo</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for resultado in resultados %}
+                    <tr>
+                        <td>{{ resultado.criado_em|date:"d/m/Y H:i" }}</td>
+                        <td>{{ resultado.pontuacao }} de {{ resultado.total }}</td>
+                        {% if ve_porcentagem %}
+                            <td>{{ resultado.porcentagem }}%</td>
+                            <td>{{ resultado.tempo_formatado }}</td>
+                        {% endif %}
+                    </tr>
+                    {% if ve_porcentagem and resultado.respostas.all %}
+                        <tr class="quiz-relatorio__detalhe">
+                            <td colspan="4">
+                                <details>
+                                    <summary>Ver pergunta por pergunta</summary>
+                                    {% with respostas=resultado.respostas.all %}{% include "quiz/_respostas_tabela.html" %}{% endwith %}
+                                </details>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Ainda não há tentativas tuas neste quiz.</p>
+    {% endif %}
+
+    <p class="obra-quadro__acoes">
+        <a class="btn btn--ciano" href="{% url 'obras:obra_quiz' obra.slug %}">Ir para o quiz</a>
+    </p>
+</section>
+
+<p><a href="{% url 'obras:detalhe' obra.slug %}"> <- Voltar para a obra</a></p>
 {% endblock %}

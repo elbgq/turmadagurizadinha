@@ -9,6 +9,48 @@ from obras.models import Obra
 MIN_ALTERNATIVAS = 3
 MAX_ALTERNATIVAS = 5
 
+# Mensagens mostradas junto com o número de acertos, ao fim do quiz —
+# texto da cliente, sem alteração (documento de 28/10/2026). Faixas
+# definidas em 29/10/2026: até 50%, acima de 50% até 70%, acima de 70%
+# (o documento fala em "60% a 70%" e "80% a 100%", o que deixaria sem
+# mensagem resultados como 55% ou 75%).
+MENSAGEM_ATE_50 = (
+    "Bah, vivente! Ainda tem muita coisa boa pra descobrir! Cada pergunta é uma "
+    "oportunidade de aprender. Não te atucana, dá mais uma espiada nas histórias e "
+    "volta pra peleia. Tu vais longe, tchê!"
+)
+MENSAGEM_ATE_70 = (
+    "Buenas! Tu já estás no rumo certo! Acertou uma boa parte da prosa. Segue "
+    "aprendendo, que conhecimento nunca é demais. Bora pra próxima, tchê!"
+)
+MENSAGEM_ACIMA_70 = (
+    "Mas barbaridade, tchê! Tu deste um show de conhecimento! Tá mais afiado que "
+    "faca de gaúcho! Parabéns, vivente! Segue assim, curioso(a) e aprendendo, que "
+    "tu é um(a) baita conhecedor(a) da nossa cultura!"
+)
+
+
+def mensagem_desempenho(acertos, total):
+    """
+    Mensagem da faixa de acerto. Compara em números inteiros
+    (acertos × 100 contra limite × total) para os limites exatos — 50% e
+    70% — não dependerem de arredondamento: 5 de 10 é "até 50%", 7 de 10
+    é "até 70%".
+    """
+    if acertos * 100 <= 50 * total:
+        return MENSAGEM_ATE_50
+    if acertos * 100 <= 70 * total:
+        return MENSAGEM_ATE_70
+    return MENSAGEM_ACIMA_70
+
+
+def formatar_tempo(segundos):
+    """90 → "1 min 30 s"; 45 → "45 s" — para o professor ler o tempo."""
+    minutos, segundos = divmod(segundos, 60)
+    if minutos:
+        return f"{minutos} min {segundos} s" if segundos else f"{minutos} min"
+    return f"{segundos} s"
+
 
 class PerguntaQuiz(models.Model):
     """
@@ -104,6 +146,19 @@ class ResultadoQuiz(models.Model):
     def __str__(self):
         return f"{self.perfil} — {self.obra} ({self.pontuacao}/{self.total})"
 
+    @property
+    def porcentagem(self):
+        """Porcentagem de acerto, arredondada (para o professor)."""
+        return round(self.pontuacao * 100 / self.total) if self.total else 0
+
+    @property
+    def mensagem(self):
+        return mensagem_desempenho(self.pontuacao, self.total)
+
+    @property
+    def tempo_formatado(self):
+        return formatar_tempo(self.tempo_segundos)
+
 
 class RespostaQuiz(models.Model):
     """
@@ -134,3 +189,7 @@ class RespostaQuiz(models.Model):
 
     def __str__(self):
         return f"{self.enunciado[:40]} — {'certa' if self.correta else 'errada'}"
+
+    @property
+    def tempo_formatado(self):
+        return formatar_tempo(self.tempo_segundos)

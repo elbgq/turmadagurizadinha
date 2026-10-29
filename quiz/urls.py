@@ -13,5 +13,8 @@ urlpatterns = [
         name="pergunta_alternativas",
     ),
     path("<slug:obra_slug>/", views.quiz_obra, name="quiz"),
+    path("<slug:obra_slug>/pergunta/<int:n>/", views.quiz_pergunta, name="pergunta"),
+    path("<slug:obra_slug>/pergunta/<int:n>/resposta/", views.quiz_resposta, name="resposta"),
+    path("<slug:obra_slug>/fim/", views.quiz_fim, name="fim"),
     path("<slug:obra_slug>/resultado/", views.quiz_resultado, name="resultado"),
 ]

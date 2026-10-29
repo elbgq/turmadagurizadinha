@@ -678,6 +678,19 @@ a:hover {
    num texto longo (pedido da cliente em 28/09/2026). Largura de até 90%
    da área da página, centralizado (ajuste de 01/10/2026, substituindo o
    limite anterior de 80ch). */
+/* Link em volta da imagem da obra — abre em tamanho cheio (29/10/2026). */
+.obra-capa__link {
+    display: block;
+    cursor: zoom-in;
+}
+
+.obra-capa__dica {
+    margin: -0.9rem 0 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--cor-secundaria);
+}
+
 .obra-texto {
     max-width: 90%;
     margin: 0 auto 2rem;
@@ -1154,4 +1167,218 @@ a:hover {
         margin-bottom: 1.5rem;
         page-break-inside: avoid;
     }
+}
+
+/* --------------------------------------------------------------------
+   Quiz interativo (Fase 7 — documento da cliente de 28/10/2026,
+   inspirado no National Geographic Kids): uma pergunta por tela, no
+   mesmo quadro do Glossário Gauchês (.obra-glossario + .obra-quadro),
+   com alternativas em botões grandes, fáceis de tocar no celular.
+   -------------------------------------------------------------------- */
+.quiz-cartao {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 720px;
+    text-align: center;
+}
+
+.quiz-cartao__rotulo {
+    margin: 0 0 0.6rem;
+    font-family: "Boogaloo", cursive;
+    font-size: 1.1rem;
+    color: var(--cor-secundaria);
+}
+
+.quiz-cartao__contador {
+    white-space: nowrap;
+}
+
+.quiz-cartao__imagem {
+    display: block;
+    max-width: 100%;
+    max-height: 320px;
+    margin: 0 auto 1rem;
+    border-radius: 12px;
+    object-fit: contain;
+}
+
+.quiz-inicio__tema {
+    font-size: 2.2rem;
+    margin-top: 0;
+}
+
+.quiz-cartao__enunciado {
+    font-size: 1.6rem;
+    margin: 0.4rem 0 1.2rem;
+}
+
+/* <button> não herda a fonte da página por padrão. */
+.quiz-botao-grande {
+    font: inherit;
+    font-weight: bold;
+    font-size: 1.15rem;
+    padding: 0.8rem 2rem;
+}
+
+.quiz-alternativas {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+}
+
+.quiz-alternativa {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 0.9rem 1.1rem;
+    border: 2px solid var(--cor-laranja-apagado);
+    border-radius: 12px;
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+    font: inherit;
+    font-size: 1.05rem;
+    text-align: left;
+}
+
+button.quiz-alternativa {
+    cursor: pointer;
+}
+
+button.quiz-alternativa:hover,
+button.quiz-alternativa:focus-visible {
+    border-color: var(--cor-azul-ciano);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.quiz-alternativa__letra {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cor-secundaria);
+    color: var(--cor-texto-claro);
+    font-family: "Boogaloo", cursive;
+    font-size: 1.1rem;
+}
+
+.quiz-alternativa__marca {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* CORRETO/ERRADO — verde e vermelho fora da paleta da marca, de
+   propósito (mesma convenção universal de .btn--perigo). */
+.quiz-veredito {
+    margin: 0 0 0.4rem;
+    font-family: "Boogaloo", cursive;
+    font-size: 2.6rem;
+    letter-spacing: 0.05em;
+}
+
+.quiz-veredito--correto { color: #1e7b34; }
+.quiz-veredito--errado { color: #c0392b; }
+
+.quiz-alternativa--correta {
+    border-color: #1e7b34;
+    background: #e6f4ea;
+}
+
+.quiz-alternativa--correta .quiz-alternativa__letra { background: #1e7b34; }
+
+.quiz-alternativa--errada {
+    border-color: #c0392b;
+    background: #fbe9e7;
+}
+
+.quiz-alternativa--errada .quiz-alternativa__letra { background: #c0392b; }
+
+.quiz-explicacao {
+    margin: 1.2rem 0 0;
+    padding: 1rem 1.2rem;
+    background: var(--cor-fundo);
+    border-radius: 10px;
+    text-align: left;
+    line-height: 1.6;
+}
+
+.quiz-explicacao p {
+    margin: 0 0 0.6rem;
+}
+
+.quiz-explicacao p:last-child {
+    margin-bottom: 0;
+}
+
+.quiz-links {
+    text-align: center;
+}
+
+.quiz-fim .obra-quadro__acoes .btn {
+    font: inherit;
+    font-weight: bold;
+}
+
+/* Tela final do quiz (Fase 7, etapa 3): acertos + mensagem da faixa
+   (texto da cliente) e, para o professor, porcentagem e tempos. */
+.quiz-fim__acertos {
+    font-size: 2rem;
+    margin: 0 0 0.6rem;
+}
+
+.quiz-fim__mensagem {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    margin: 0 auto 1rem;
+    max-width: 54ch;
+}
+
+.quiz-professor {
+    margin: 1rem 0 0;
+    padding: 1rem 1.2rem;
+    background: var(--cor-fundo);
+    border-radius: 10px;
+    text-align: left;
+}
+
+.quiz-professor__titulo {
+    margin: 0 0 0.3rem;
+    font-family: "Boogaloo", cursive;
+    font-size: 1.15rem;
+    color: var(--cor-secundaria);
+}
+
+.quiz-professor__resumo {
+    margin: 0 0 0.8rem;
+}
+
+.quiz-respostas {
+    font-size: 0.9rem;
+}
+
+.quiz-respostas--certa { color: #1e7b34; font-weight: 600; }
+.quiz-respostas--errada { color: #c0392b; font-weight: 600; }
+
+.quiz-relatorio {
+    max-width: 900px;
+}
+
+.quiz-relatorio__detalhe summary {
+    cursor: pointer;
+    color: var(--cor-secundaria);
+}
+
+.quiz-relatorio__detalhe details[open] summary {
+    margin-bottom: 0.5rem;
 }

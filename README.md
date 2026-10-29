@@ -1,6 +1,6 @@
 # Turma da Gurizadinha
 
-Site com conteúdo de obras infantis ilustradas, criado para uso de professores como material didático. Contará inicialmente com 30 histórias publicadas; cada obra disponibiliza texto completo, tópicos/resumo para uso em sala de aula, atividades de apoio para impressão (sem versão interativa — a única parte interativa da plataforma é o quiz) e um quiz com temporizador, pontuação e relatório de desempenho para o professor.
+Site com conteúdo de obras infantis ilustradas, criado para uso de professores como material didático. Contará inicialmente com 30 histórias publicadas; cada obra disponibiliza texto completo, tópicos/resumo para uso em sala de aula, atividades de apoio para impressão (sem versão interativa — a única parte interativa da plataforma é o quiz) e um quiz interativo com pontuação, mensagem final por faixa de acerto e relatório de desempenho para o professor (sem limite de tempo para a criança — o tempo é só medido, para o professor).
 
 Stack: **Python + Django 5.2 (LTS)**, banco **SQLite** em desenvolvimento, front-end em templates Django (HTML/CSS/JS).
 
@@ -13,8 +13,8 @@ turmadagurizadinha/
 │                              #   login obrigatório em todo o site, troca de senha
 ├── obras/                  # Models da Fase 4 ✅ (Obra, Questao, Alternativa) — front-end
 │                              #   completo (Home, Página da Obra) ainda é Fase 5
-├── quiz/                    # ResultadoQuiz da Fase 4 ✅ — Módulo de Quiz interativo
-│                              #   (PerguntaQuiz, AlternativaQuiz, temporizador) é Fase 7
+├── quiz/                    # Módulo de Quiz (Fase 7 ✅): PerguntaQuiz, AlternativaQuiz,
+│                              #   ResultadoQuiz (Fase 4) e RespostaQuiz
 ├── templates/                # templates globais (base.html, navbar)
 ├── static/                   # css/js/img globais
 ├── media/                    # uploads (ilustrações das obras — Fase 4)
@@ -139,7 +139,11 @@ Cada app tem seus próprios `templates/<app>/`, `models.py`, `views.py`, `urls.p
     Não estava no cronograma original; ficou registrado aqui para a cliente ter ciência.
 - [ ] ~~**Fase 6 — Módulo de Avaliações**~~ (1,5 semana) — **incorporada à Fase 5**: não existe mais avaliação interativa separada (só o quiz é interativo); ver nota acima. Decisão sobre ajustar oficialmente o cronograma ainda pendente com você.
   - **Acréscimo (28/09/2026):** upload de PDF da atividade de apoio (`Obra.atividade_pdf`, um PDF por obra), convivendo com a impressão das perguntas cadastradas — a equipe editorial pode anexar um material já pronto, além de ou no lugar de cadastrar perguntas. Não estava no cronograma original; ficou registrado aqui para a cliente ter ciência.
-- [ ] **Fase 7 — Módulo de Quiz** (2 semanas)
+- [x] **Fase 7 — Módulo de Quiz** (2 semanas) — feito em 29/10/2026, em 3 etapas, conforme o documento apresentado pela cliente na reunião de 28/10/2026 (`quiz-porto_alegre.pdf`, inspirado no [National Geographic Kids](https://kids.nationalgeographic.com/games/quizzes)). Os exemplos do documento (Porto Alegre) foram trocados por um quiz da obra "Lenda da Erva-Mate".
+  - **Cadastro (etapa 1):** models `PerguntaQuiz` (enunciado, imagem opcional, explicação, ordem) e `AlternativaQuiz` (texto, correta, ordem), separados de `Questao`/`Alternativa` (que seguem sendo só a atividade impressa). Regra da cliente validada no formulário e no Admin: de 3 a 5 alternativas e exatamente uma correta; pergunta incompleta fica fora do quiz. Sem imagem própria, a pergunta usa a imagem da página da obra. Tela "Perguntas do quiz" em `/quiz/gerenciar/<obra>/` (botão na edição da obra e link "Quiz" em Gerenciar obras), com as permissões dadas ao grupo "Equipe editorial" pela migration `quiz/0003`. O campo "Tempo total do quiz" saiu da tela da obra (o model mantém `tempo_limite_segundos`).
+  - **Telas do aluno (etapa 2):** a página "Quiz interativo" da obra (`obra/<slug>/quiz/`) é a página inicial, com o tema, a imagem, o número de perguntas e o botão INICIAR. Uma pergunta por tela (`n/total`, imagem, alternativas em botões grandes); ao clicar, a tela CORRETO/ERRADO com a alternativa certa em destaque e a explicação; no fim, os acertos. Sem limite de tempo (decisão de 29/10/2026: não pressionar a criança). A tentativa fica na sessão do navegador; não dá para pular pergunta nem trocar uma resposta já dada. Sem JavaScript.
+  - **Resultado e relatório (etapa 3):** ao terminar, a tentativa é gravada em `ResultadoQuiz` (acertos, total, tempo total) e `RespostaQuiz` (uma por pergunta: resposta, certa/errada, tempo naquela pergunta). A tela final mostra a mensagem da cliente por faixa: **até 50%**, **acima de 50% até 70%** e **acima de 70%** (faixas definidas em 29/10/2026; o documento falava em 60–70% e 80–100%, o que deixava sem mensagem resultados como 3 de 4). Quem tem perfil Professor(a) (ou é staff) vê também a porcentagem, o tempo total e o tempo por pergunta. "Relatório de desempenho" (`quiz/<slug>/resultado/`) lista o histórico das tentativas da própria conta. A migration de dados `quiz/0004` cadastra as 6 perguntas de exemplo da "Lenda da Erva-Mate" (só se a obra existir e ainda não tiver perguntas).
+  - **Fica para depois:** relatório por turma/aluno para o professor (previsto no contrato) — depende de um model `Turma` com código de acesso, a combinar com a cliente. Ilustrações próprias para cada pergunta da Erva-Mate dependem da cliente.
 - [ ] **Fase 8 — Carga das 30 Obras** (2 semanas, em paralelo)
 - [ ] **Fase 9 — Testes e Ajustes** (1 semana)
 - [ ] **Fase 10 — Publicação** (3 dias)

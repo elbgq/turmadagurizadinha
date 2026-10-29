@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Resultado — {{ obra.titulo }}{% endblock %}
+{% block body_class %}pagina-quadro{% endblock %}
+
+{% block content %}
+<section class="obra-glossario obra-quadro quiz-cartao quiz-fim">
+    <p class="quiz-cartao__rotulo">{{ obra.titulo }}</p>
+    <h1 class="obra-quadro__titulo quiz-fim__acertos">Tu acertaste {{ resultado.pontuacao }} de {{ resultado.total }}!</h1>
+    <p class="quiz-fim__mensagem">{{ resultado.mensagem }}</p>
+
+    {# Para o professor (decisão de 29/10/2026): porcentagem e tempo, sem limite de tempo para a criança. #}
+    {% if ve_porcentagem %}
+        <div class="quiz-professor">
+            <p class="quiz-professor__titulo">Para o professor(a)</p>
+            <p class="quiz-professor__resumo">
+                <strong>{{ resultado.porcentagem }}%</strong> de acerto ·
+                tempo total: <strong>{{ resultado.tempo_formatado }}</strong>
+            </p>
+            {% include "quiz/_respostas_tabela.html" %}
+        </div>
+    {% endif %}
+
+    <div class="obra-quadro__acoes">
+        <form method="post" action="{% url 'quiz:quiz' obra.slug %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--ciano">Jogar de novo</button>
+        </form>
+        <a class="btn btn--ghost" href="{% url 'obras:detalhe' obra.slug %}">Voltar para a obra</a>
+    </div>
+</section>
+
+<p class="quiz-links"><a href="{% url 'quiz:resultado' obra.slug %}">Relatório de desempenho</a></p>
+{% endblock %}

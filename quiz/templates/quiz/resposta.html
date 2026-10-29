@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{% if acertou %}Correto{% else %}Errado{% endif %} — {{ obra.titulo }}{% endblock %}
+{% block body_class %}pagina-quadro{% endblock %}
+
+{% block content %}
+<section class="obra-glossario obra-quadro quiz-cartao">
+    <p class="quiz-cartao__rotulo">{{ obra.titulo }} · <span class="quiz-cartao__contador">{{ n }}/{{ total }}</span></p>
+    <p class="quiz-veredito {% if acertou %}quiz-veredito--correto{% else %}quiz-veredito--errado{% endif %}">
+        {% if acertou %}CORRETO{% else %}ERRADO{% endif %}
+    </p>
+    <h1 class="obra-quadro__titulo quiz-cartao__enunciado">{{ pergunta.enunciado }}</h1>
+
+    <ul class="quiz-alternativas quiz-alternativas--resultado">
+        {% for alternativa in pergunta.alternativas.all %}
+            <li class="quiz-alternativa{% if alternativa.correta %} quiz-alternativa--correta{% elif alternativa.pk == escolhida_id %} quiz-alternativa--errada{% endif %}">
+                <span class="quiz-alternativa__letra">{% cycle 'A' 'B' 'C' 'D' 'E' %}</span>
+                <span>
+                    {{ alternativa.texto }}
+                    {% if alternativa.pk == escolhida_id %}<small class="quiz-alternativa__marca">Tua resposta</small>{% endif %}
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <div class="quiz-explicacao">{{ pergunta.explicacao|linebreaks }}</div>
+
+    <p class="obra-quadro__acoes">
+        {% if ultima %}
+            <a class="btn btn--ciano quiz-botao-grande" href="{% url 'quiz:fim' obra.slug %}">Ver meu resultado</a>
+        {% else %}
+            <a class="btn btn--ciano quiz-botao-grande" href="{% url 'quiz:pergunta' obra.slug n|add:1 %}">Próxima pergunta</a>
+        {% endif %}
+    </p>
+</section>
+{% endblock %}

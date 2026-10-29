@@ -1,0 +1,17 @@
+{# Detalhe de uma tentativa, pergunta por pergunta — usado na tela final #}
+{# e no relatório de desempenho, só para o professor. Espera `respostas`. #}
+<table class="tabela-gestao quiz-respostas">
+    <thead>
+        <tr><th>#</th><th>Pergunta</th><th>Resposta</th><th>Tempo</th></tr>
+    </thead>
+    <tbody>
+        {% for resposta in respostas %}
+            <tr>
+                <td>{{ resposta.ordem }}</td>
+                <td>{{ resposta.enunciado }}</td>
+                <td class="{% if resposta.correta %}quiz-respostas--certa{% else %}quiz-respostas--errada{% endif %}">{% if resposta.correta %}Certa{% else %}Errada{% endif %}</td>
+                <td>{{ resposta.tempo_formatado }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

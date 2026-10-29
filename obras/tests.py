@@ -749,3 +749,36 @@ class ObraListaPublicaEBuscaTests(TestCase):
         self.assertContains(resposta, "Lista de obras")
         self.assertContains(resposta, reverse("obras:obra_lista_publica"))
         self.assertNotContains(resposta, ">Gerenciar obras<")
+
+
+class ObraSoFiguraTests(TestCase):
+    """
+    Obras que são só uma figura com o texto dentro (29/10/2026): sem texto
+    completo, o bloco de texto não é montado, e a imagem abre em tamanho
+    cheio ao ser clicada.
+    """
+
+    def setUp(self):
+        self.usuario = User.objects.create_user("leitor", password="senha-teste-123")
+        self.client.force_login(self.usuario)
+
+    def test_sem_texto_completo_nao_monta_o_bloco_de_texto(self):
+        obra = Obra.objects.create(titulo="Só figura", slug="so-figura", publicada=True)
+        resposta = self.client.get(reverse("obras:detalhe", args=[obra.slug]))
+        self.assertEqual(resposta.status_code, 200)
+        self.assertNotContains(resposta, 'class="obra-texto"')
+
+    def test_com_texto_completo_mostra_o_texto(self):
+        obra = Obra.objects.create(
+            titulo="Com texto", slug="com-texto", publicada=True, texto_completo="Era uma vez."
+        )
+        resposta = self.client.get(reverse("obras:detalhe", args=[obra.slug]))
+        self.assertContains(resposta, 'class="obra-texto"')
+        self.assertContains(resposta, "Era uma vez.")
+
+    def test_imagem_abre_em_tamanho_cheio(self):
+        obra = Obra.objects.create(
+            titulo="Figura", slug="figura", publicada=True, imagem_pagina="obras/paginas/figura.png"
+        )
+        resposta = self.client.get(reverse("obras:detalhe", args=[obra.slug]))
+        self.assertContains(resposta, 'href="/media/obras/paginas/figura.png" target="_blank"')

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Pergunta {{ n }} — {{ obra.titulo }}{% endblock %}
+{% block body_class %}pagina-quadro{% endblock %}
+
+{% block content %}
+<section class="obra-glossario obra-quadro quiz-cartao">
+    <p class="quiz-cartao__rotulo">{{ obra.titulo }} · <span class="quiz-cartao__contador">{{ n }}/{{ total }}</span></p>
+    {% if pergunta.imagem_exibida %}
+        <img class="quiz-cartao__imagem" src="{{ pergunta.imagem_exibida.url }}" alt="">
+    {% endif %}
+    <h1 class="obra-quadro__titulo quiz-cartao__enunciado">{{ pergunta.enunciado }}</h1>
+
+    {# Cada alternativa é um botão do mesmo formulário: o clique já responde. #}
+    <form method="post" class="quiz-alternativas">
+        {% csrf_token %}
+        {% for alternativa in pergunta.alternativas.all %}
+            <button type="submit" name="alternativa" value="{{ alternativa.pk }}" class="quiz-alternativa">
+                <span class="quiz-alternativa__letra">{% cycle 'A' 'B' 'C' 'D' 'E' %}</span>
+                {{ alternativa.texto }}
+            </button>
+        {% endfor %}
+    </form>
+</section>
+{% endblock %}

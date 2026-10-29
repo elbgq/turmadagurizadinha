@@ -5,14 +5,26 @@
 <h1>{{ obra.titulo }}</h1>
 {% if obra.texto_breve %}<p class="obra-texto-breve">{{ obra.texto_breve }}</p>{% endif %}
 
-{% if obra.imagem_pagina %}<img class="obra-capa" src="{{ obra.imagem_pagina.url }}" alt="{{ obra.titulo }}" />{% endif %}
+{# A imagem abre em tamanho cheio ao ser clicada/tocada (29/10/2026): há #}
+{# obras que são só uma figura com o texto dentro dela, e no celular esse #}
+{# texto fica pequeno — em tamanho cheio dá para ampliar com os dedos. #}
+{% if obra.imagem_pagina %}
+    <a class="obra-capa__link" href="{{ obra.imagem_pagina.url }}" target="_blank" rel="noopener" title="Abrir a imagem em tamanho cheio">
+        <img class="obra-capa" src="{{ obra.imagem_pagina.url }}" alt="{{ obra.titulo }}" />
+    </a>
+    <p class="obra-capa__dica">Toque na imagem para ver em tamanho cheio.</p>
+{% endif %}
 
-<section class="obra-texto">
-    {# Sem <p> em volta do filtro |linebreaks: ele já gera os próprios #}
-    {# parágrafos a partir das linhas em branco do texto (um <p> dentro #}
-    {# de outro é inválido e atrapalhava o espaçamento entre parágrafos). #}
-    {{ obra.texto_completo|linebreaks }}
-</section>
+{# Obras que são só a figura deixam o texto completo em branco — sem ele, #}
+{# o bloco nem é montado (antes sobrava um <p> vazio e a margem). #}
+{% if obra.texto_completo %}
+    <section class="obra-texto">
+        {# Sem <p> em volta do filtro |linebreaks: ele já gera os próprios #}
+        {# parágrafos a partir das linhas em branco do texto (um <p> dentro #}
+        {# de outro é inválido e atrapalhava o espaçamento entre parágrafos). #}
+        {{ obra.texto_completo|linebreaks }}
+    </section>
+{% endif %}
 
 {% if termos_glossario %}
     {# Glossário Gauchês — no final da página, abaixo dos botões de #}

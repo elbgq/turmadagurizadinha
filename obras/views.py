@@ -131,13 +131,15 @@ def obra_atividade(request, slug):
 
 def obra_quiz(request, slug):
     """
-    Página própria de "Quiz Interativo" da obra — só a porta de entrada
-    para a lógica do quiz, que é da Fase 7 (ainda placeholder em
-    quiz/views.py). Decisão da cliente em 01/10/2026: este botão não
-    tem lógica própria aqui, só os links para quiz:quiz/quiz:resultado.
+    Página inicial do "Quiz Interativo" da obra (Fase 7): o nome do tema
+    (título da obra), a imagem, quantas perguntas e o botão INICIAR,
+    conforme o documento da cliente de 28/10/2026. A lógica do quiz em
+    si fica no app quiz (quiz/views.py) — o INICIAR envia para
+    quiz:quiz; daqui também se chega ao relatório (quiz:resultado).
     """
     obra = _obra_visivel_ou_404(slug, request)
-    return render(request, "obras/quiz.html", {"obra": obra})
+    total_perguntas = sum(1 for p in obra.perguntas_quiz.prefetch_related("alternativas") if p.esta_completa)
+    return render(request, "obras/quiz.html", {"obra": obra, "total_perguntas": total_perguntas})
 
 
 def atividade_pdf(request, slug):
