@@ -100,6 +100,8 @@ a:hover {
 .navbar__link {
     font-family: "Boogaloo", cursive;
     font-size: 1.30rem;
+    /* Menu em maiúsculas (reunião com a cliente, 28/10/2026). */
+    text-transform: uppercase;
 }
 
 /* Logomarca oficial (Manual de Marca, recebido 25/09/2026) — altura fixa
@@ -108,7 +110,8 @@ a:hover {
    (static/img/marcas/marca-principal.png, bem mais larga que alta),
    por isso a altura foi reduzida em relação à logo antiga. */
 .navbar__logo {
-    height: 4.2rem; /* Ajuste conforme o tamanho do navbar */
+    /* 4.2rem → 6rem: logo nova e maior (reunião com a cliente, 28/10/2026). */
+    height: 6rem;
     width: auto;
     display: block;
 }
@@ -549,6 +552,35 @@ a:hover {
     margin: 1.5rem 0 2rem calc(50% - 50vw);
     /* 110px → 170px: agora há ondas em cima e embaixo. */
     height: 170px;
+}
+
+/* Banner de topo da Home (reunião com a cliente, 28/10/2026): figura
+   única em toda a largura da tela, colada no navbar (o margin-top
+   negativo anula o padding de 2rem do .container). Mesmo recurso de
+   largura 100vw do .divisor-ondulado. */
+.banner-topo__imagem {
+    display: block;
+    width: 100vw;
+    height: auto;
+    margin: -2rem 0 0 calc(50% - 50vw);
+}
+
+/* Faixa amarela (divisoria.png) entre o banner e "Obras disponíveis",
+   no lugar do divisor ondulado na Home — sobe um pouco sobre a parte
+   de baixo do banner (fundo creme). */
+.divisoria-home {
+    display: block;
+    width: 100vw;
+    height: auto;
+    margin: -3vw 0 2rem calc(50% - 50vw);
+    position: relative;
+}
+
+/* "Obras disponíveis" sublinhado em amarelo, como no layout de 28/10/2026. */
+.obras-disponiveis__titulo {
+    max-width: 75%;
+    border-bottom: 3px solid var(--cor-destaque);
+    padding-bottom: 0.4rem;
 }
 
 .obras-grid {

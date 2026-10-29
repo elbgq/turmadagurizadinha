@@ -3,22 +3,8 @@
 {% block title %}Turma da Gurizadinha — A Turminha{% endblock %}
 
 {% block content %}
-{# Apresentação da Turminha (ajuste de 02/10/2026): arte "Quem faz parte #}
-{# da Turminha" extraída da página Apresentação-A4.pdf enviada pela #}
-{# cliente, com fundo transparente — centralizada no topo da página. #}
-<section class="turminha-apresentacao">
-    <img
-        src="{% static 'img/apresentacao-turminha.png' %}"
-        alt="Quem faz parte da Turminha: Catarina, Cícero, Germano e o cusco Guri, com a história de como a turma se conheceu"
-        class="turminha-apresentacao__imagem"
-    >
-</section>
-
-{# Divisor ondulado em dois tons de amarelo — o mesmo da Home #}
-{# (partials/divisor_ondulado.html, classe .divisor-ondulado em base.css) —, separando a #}
-{# apresentação da descrição dos personagens. #}
-{% include "partials/divisor_ondulado.html" %}
-
+{# A arte "Quem faz parte da Turminha" e o divisor ondulado do topo foram #}
+{# retirados a pedido da cliente (reunião de 28/10/2026). #}
 <h1>A Turminha</h1>
 
 {# Conteúdo editável pela equipe editorial desde 29/09/2026 (ver #}

@@ -21,10 +21,13 @@ class ObraForm(forms.ModelForm):
         # "autor" e "faixa_etaria" continuam existindo no model (e no Django
         # Admin), mas ficam ocultos desta tela de cadastro a pedido da
         # cliente (28/09/2026). "categoria" aparece logo após "titulo".
+        # "tempo_limite_segundos" também saiu da tela: o quiz não tem
+        # limite de tempo (decisão de 29/10/2026, Fase 7 — não pressionar
+        # a criança); o campo fica no model até uma limpeza futura.
         fields = [
             "titulo", "categoria", "slug", "ilustrador", "capa", "imagem_pagina",
             "texto_breve", "texto_completo", "topicos_resumo",
-            "tempo_limite_segundos", "ordem", "publicada",
+            "ordem", "publicada",
             "atividade_pdf", "resumo_pdf",
         ]
         widgets = {

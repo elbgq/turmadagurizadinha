@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Perguntas do quiz — {{ obra.titulo }}{% endblock %}
+
+{% block content %}
+<h1>Perguntas do quiz: {{ obra.titulo }}</h1>
+
+{% for message in messages %}<p class="mensagem">{{ message }}</p>{% endfor %}
+
+<p>Cada pergunta precisa de 3 a 5 alternativas, com uma só correta — elas são cadastradas depois de salvar a pergunta. A explicação aparece depois da resposta, para quem acertou e para quem errou. Sem imagem, a pergunta usa a imagem da página da obra.</p>
+
+<form class="form form--obra" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
+    {% for pergunta_form in formset %}
+        <fieldset class="form__questao">
+            {{ pergunta_form.id }}
+            {{ pergunta_form.non_field_errors }}
+            {% if pergunta_form.instance.pk %}
+                <div class="form__campo-cabecalho">
+                    <strong>Pergunta {{ forloop.counter }}</strong>
+                    <span class="form__ordem-valor">Ordem: {{ pergunta_form.instance.ordem }}</span>
+                </div>
+            {% else %}
+                <p class="form__novo-enunciado">Nova pergunta</p>
+            {% endif %}
+            {% for field in pergunta_form.visible_fields %}
+                {% if field.name != "DELETE" %}
+                    <div class="form__campo">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {% if pergunta_form.instance.pk %}
+                <p><a href="{% url 'quiz:pergunta_alternativas' pergunta_form.instance.pk %}">Gerenciar alternativas ({{ pergunta_form.instance.alternativas.count }})</a></p>
+                {% if not pergunta_form.instance.esta_completa %}
+                    <p class="mensagem mensagem--erro">Incompleta: fica fora do quiz até ter de 3 a 5 alternativas e uma correta.</p>
+                {% endif %}
+            {% else %}
+                <p><small>Salve para poder cadastrar as alternativas desta pergunta.</small></p>
+            {% endif %}
+            {% if pergunta_form.DELETE %}
+                <label class="form__excluir">{{ pergunta_form.DELETE }} Excluir esta pergunta</label>
+            {% endif %}
+        </fieldset>
+    {% endfor %}
+    <button type="submit" class="btn">Salvar</button>
+</form>
+
+<p><a href="{% url 'obras:obra_editar' obra.pk %}">← Voltar para a obra</a></p>
+{% endblock %}

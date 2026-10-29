@@ -58,6 +58,11 @@
         {% endfor %}
     {% endif %}
 
+    {% if obra and perms.quiz.change_perguntaquiz %}
+        <h2>Quiz interativo</h2>
+        <p><a class="btn btn--ciano btn--pequeno" href="{% url 'quiz:perguntas_editar' obra.pk %}">Perguntas do quiz ({{ obra.perguntas_quiz.count }})</a></p>
+    {% endif %}
+
     {% if glossario_formset %}
         <h2>Glossário Gauchês</h2>
         <p>Termos do vocabulário regional usados no texto, com sua definição — aparecem em destaque na página da obra, fora do texto principal.</p>

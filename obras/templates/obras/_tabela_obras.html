@@ -25,6 +25,9 @@
                         {% if perms.obras.change_obra %}
                             <a href="{% url 'obras:obra_editar' obra.pk %}">Editar</a>
                         {% endif %}
+                        {% if perms.quiz.change_perguntaquiz %}
+                            · <a href="{% url 'quiz:perguntas_editar' obra.pk %}">Quiz</a>
+                        {% endif %}
                         {% if perms.obras.delete_obra %}
                             · <a href="{% url 'obras:obra_excluir' obra.pk %}">Excluir</a>
                         {% endif %}

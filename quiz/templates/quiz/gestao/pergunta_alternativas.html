@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Alternativas do quiz{% endblock %}
+
+{% block content %}
+<h1>Alternativas — {{ pergunta.enunciado }}</h1>
+<p>Quiz da obra {{ pergunta.obra.titulo }}. Preencha de 3 a 5 alternativas e marque a correta; linhas deixadas em branco são ignoradas.</p>
+
+<form class="form form--alternativas" method="post" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}
+        <div class="mensagem mensagem--erro">{{ formset.non_form_errors }}</div>
+    {% endif %}
+    {% for alt_form in formset %}
+        <fieldset class="form__alternativa">
+            {{ alt_form.id }}
+            {{ alt_form.non_field_errors }}
+            <div class="form__campo">
+                <label for="{{ alt_form.texto.id_for_label }}">Texto</label>
+                {{ alt_form.texto }}
+                {{ alt_form.texto.errors }}
+            </div>
+            <div class="form__campo">
+                <label for="{{ alt_form.ordem.id_for_label }}">Ordem</label>
+                {{ alt_form.ordem }}
+            </div>
+            <label class="form__correta">{{ alt_form.correta }} Correta</label>
+            {% if alt_form.instance.pk and alt_form.DELETE %}
+                <label class="form__excluir">{{ alt_form.DELETE }} Excluir</label>
+            {% endif %}
+        </fieldset>
+    {% endfor %}
+    <button type="submit" class="btn">Salvar alternativas</button>
+</form>
+
+<p><a href="{% url 'quiz:perguntas_editar' pergunta.obra_id %}">← Voltar para as perguntas do quiz</a></p>
+{% endblock %}
