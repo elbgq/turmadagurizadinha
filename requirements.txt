@@ -3,3 +3,5 @@ Pillow>=10.0         # necessário para ImageField (upload de ilustrações — 
 python-dotenv>=1.0   # carrega o .env local (SECRET_KEY etc. — ver .env.example)
 gunicorn>=26.0       # servidor de produção (Fase 10 — hospedagem); não roda no Windows, só no servidor
 whitenoise>=6.12     # serve os arquivos de static/ em produção (Fase 10 — hospedagem)
+psycopg[binary]>=3.2 # driver do PostgreSQL (produção)
+dj-database-url>=3.0 # lê a DATABASE_URL

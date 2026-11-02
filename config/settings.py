@@ -14,6 +14,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -24,6 +25,16 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Pasta dos dados que precisam sobreviver a cada deploy (uploads em media/ e,
+# se não houver DATABASE_URL, o db.sqlite3). Na sua máquina continua sendo a
+# pasta do projeto; no Railway é o volume montado (ex.: /data), lido
+# automaticamente de RAILWAY_VOLUME_MOUNT_PATH. DJANGO_DATA_DIR tem prioridade.
+DATA_DIR = Path(
+    os.environ.get("DJANGO_DATA_DIR")
+    or os.environ.get("RAILWAY_VOLUME_MOUNT_PATH")
+    or BASE_DIR
+)
 
 
 # Quick-start development settings - unsuitable for production
@@ -51,20 +62,32 @@ if not SECRET_KEY:
             "no servidor antes de rodar com DEBUG=False."
         )
 
-ALLOWED_HOSTS = os.environ.get(
-    "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,septal-zainab-unsymptomatic.ngrok-free.dev"
-).split(",")
+# Domínios extras (ex.: túnel do ngrok para testes, domínio próprio) entram
+# pelo .env / variáveis do servidor, separados por vírgula.
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if h.strip()
+]
 
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    "DJANGO_CSRF_TRUSTED_ORIGINS",
-    "https://septal-zainab-unsymptomatic.ngrok-free.dev",
-).split(",")
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if o.strip()
+]
+
+# O Railway informa o domínio gerado (xxx.up.railway.app) nesta variável;
+# ele entra sozinho na lista, sem precisar repetir nas variáveis do serviço.
+RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 
 # Application definition
 
 # Apps do projeto Turma da Gurizadinha (ver README.md para o mapeamento com as fases)
 LOCAL_APPS = [
-    "contas",  # Fase 4: autocadastro, login e logout (login obrigatório em todo o site)
+    "contas",  # Fase 4: contas (criadas pela equipe no Admin), login e logout (login obrigatório em todo o site)
     "obras",   # Fase 5: Home, Página da Obra, atividades de apoio para impressão (Questao/Alternativa)
     "quiz",    # Fase 7: Módulo de Quiz (temporizador, pontuação, relatório de desempenho)
 ]
@@ -80,6 +103,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Fase 10: serve os arquivos de static/ em produção (logo após o
+    # SecurityMiddleware, como pede a documentação do WhiteNoise).
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -88,7 +114,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Fase 4: login obrigatório em toda a plataforma — público em geral,
     # alunos e professores incluídos. Só as views marcadas com
-    # @login_not_required (contas:login e contas:cadastro) ficam de fora.
+    # @login_not_required (login, recuperação de senha e "Solicitar acesso")
+    # ficam de fora.
     # O próprio Django Admin já cuida do login dele mesmo, sem precisar de
     # marcação especial (ver contas/urls.py).
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
@@ -116,13 +143,17 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+#
+# Com DATABASE_URL definida (produção: PostgreSQL do Railway, ex.:
+# postgresql://usuario:senha@host:5432/banco), usa esse banco. Sem ela (sua
+# máquina, .env sem DATABASE_URL), continua no SQLite de sempre.
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{(DATA_DIR / 'db.sqlite3').as_posix()}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -162,11 +193,29 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# Destino do `collectstatic` (rodado no build do Railway, ver railway.json);
+# fora do Git (ver .gitignore).
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # Com DEBUG=False (produção), o WhiteNoise serve os arquivos comprimidos e
+    # com nome versionado (cache longo no navegador). Em desenvolvimento fica
+    # o armazenamento simples, que não exige rodar `collectstatic`.
+    "staticfiles": {
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        )
+    },
+}
 
 # Upload de ilustrações e demais arquivos de mídia (Fase 4)
 # https://docs.djangoproject.com/en/5.1/topics/files/
+# Fica em DATA_DIR para não se perder a cada deploy (volume no Railway).
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = DATA_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -201,3 +250,21 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL", "Turma da Gurizadinha <nao-responda@turmadagurizadinha.com.br>"
 )
+# Endereço que recebe o aviso de cada novo pedido de "Solicitar acesso"
+# (ver contas/emails.py). Vazio = sem aviso; os pedidos continuam no Admin.
+EMAIL_EQUIPE_ADMINISTRATIVA = os.environ.get("EMAIL_EQUIPE_ADMINISTRATIVA", "")
+
+
+# Segurança em produção (Fase 10) — só com DEBUG=False, para não atrapalhar o
+# `runserver` local (que não tem HTTPS).
+if not DEBUG:
+    # O Railway (e o Cloudflare na frente dele) entrega o HTTPS e repassa a
+    # requisição ao Django por HTTP, avisando neste cabeçalho.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # HSTS: o navegador passa a só aceitar HTTPS no domínio. Começa desligado
+    # (0); depois que o domínio próprio estiver estável com HTTPS, aumentar
+    # pela variável (ex.: 31536000 = 1 ano).
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "0"))

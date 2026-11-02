@@ -11,9 +11,9 @@ rota dentro do próprio app "quiz" (ver quiz/urls.py).
 """
 
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -22,5 +22,16 @@ urlpatterns = [
     path("quiz/", include("quiz.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Uploads (media/): servidos pelo próprio Django também em produção. O
+# volume é pequeno e o LoginRequiredMiddleware protege esses arquivos como o
+# resto do site (só quem está logado vê as ilustrações e PDFs).
+# `static()` só funciona com DEBUG=True, por isso a rota é declarada direto.
+def servir_media(request, path):
+    # MEDIA_ROOT lido a cada requisição (e não fixado na hora de montar as
+    # rotas), para respeitar o override_settings dos testes.
+    return serve(request, path, document_root=settings.MEDIA_ROOT)
+
+
+urlpatterns += [
+    re_path(rf"^{settings.MEDIA_URL.lstrip('/')}(?P<path>.*)$", servir_media),
+]

@@ -37,3 +37,6 @@ claude-setup/*
 
 # Vídeos de protótipo (não versionados)
 static/video/
+
+# Exportação de dados (dumpdata) — contém dados de alunos
+dados.json
