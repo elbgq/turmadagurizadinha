@@ -782,3 +782,30 @@ class ObraSoFiguraTests(TestCase):
         )
         resposta = self.client.get(reverse("obras:detalhe", args=[obra.slug]))
         self.assertContains(resposta, 'href="/media/obras/paginas/figura.png" target="_blank"')
+
+
+class PublicadaEmDestaqueTests(TestCase):
+    """Caixa "Publicar esta obra" no topo da edição (29/10/2026)."""
+
+    def setUp(self):
+        editor = User.objects.create_user("editor-publicada", password="senha-teste-123")
+        editor.user_permissions.add(*Permission.objects.filter(codename__in=["add_obra", "change_obra", "view_obra"]))
+        self.client.force_login(editor)
+
+    def test_edicao_mostra_situacao_e_efeitos(self):
+        obra = Obra.objects.create(titulo="Rascunho", slug="rascunho", publicada=False)
+        resposta = self.client.get(reverse("obras:obra_editar", args=[obra.pk]))
+        self.assertContains(resposta, "Publicar esta obra")
+        self.assertContains(resposta, "não publicada (rascunho)")
+        self.assertContains(resposta, "a obra aparece na Home e na Lista de obras")
+        self.assertContains(resposta, 'name="publicada"', count=1)
+
+    def test_obra_publicada_tem_caixa_destacada(self):
+        obra = Obra.objects.create(titulo="No ar", slug="no-ar", publicada=True)
+        resposta = self.client.get(reverse("obras:obra_editar", args=[obra.pk]))
+        self.assertContains(resposta, "form__publicacao--publicada")
+        self.assertContains(resposta, "Situação atual: <strong>publicada</strong>", html=False)
+
+    def test_obra_nova_explica_que_comeca_como_rascunho(self):
+        resposta = self.client.get(reverse("obras:obra_nova"))
+        self.assertContains(resposta, "Obra nova: começa como")

@@ -152,8 +152,8 @@ def _ve_porcentagem(user):
     """
     Porcentagem e tempos aparecem para quem tem perfil Professor(a) —
     decisão de 29/10/2026 — e para a equipe técnica (staff), que testa
-    o quiz. O tipo do perfil é autodeclarado: isto é conforto de tela
-    para o professor, não um controle de acesso.
+    o quiz. O tipo do perfil é definido pela equipe administrativa ao
+    criar a conta no Admin (não há mais autocadastro desde 29/10/2026).
     """
     perfil = getattr(user, "perfil", None)
     return user.is_staff or (perfil is not None and perfil.tipo == Perfil.PROFESSOR)

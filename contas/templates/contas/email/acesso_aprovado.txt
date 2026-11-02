@@ -1,0 +1,11 @@
+{% autoescape off %}Olá{% if user.first_name %}, {{ user.first_name }}{% endif %},
+
+Sua conta na Turma da Gurizadinha foi criada. Para entrar, você usa este e-mail ({{ user.email }}) e uma senha que você mesmo escolhe.
+
+Para criar a sua senha, acesse o link abaixo:
+
+{{ link }}
+
+Esse link vale por alguns dias. Se ele expirar, use a opção "Esqueceu a senha?" na tela de login ({{ login }}).
+
+Equipe Turma da Gurizadinha{% endautoescape %}

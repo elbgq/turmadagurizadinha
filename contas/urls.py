@@ -8,7 +8,9 @@ from .forms import EmailAuthenticationForm, EmailPasswordResetForm
 app_name = "contas"
 
 urlpatterns = [
-    path("cadastro/", views.cadastro, name="cadastro"),
+    # Canal de contato para quem ainda não tem conta (não há autocadastro).
+    path("solicitar-acesso/", views.solicitar_acesso, name="solicitar_acesso"),
+    path("solicitar-acesso/enviado/", views.solicitar_acesso_enviado, name="solicitar_acesso_enviado"),
     path(
         "login/",
         login_not_required(
@@ -41,7 +43,7 @@ urlpatterns = [
         name="trocar_senha_feito",
     ),
     # "Esqueci minha senha" — fica fora do portão de login obrigatório
-    # (@login_not_required), igual login/cadastro: é justamente para quem
+    # (@login_not_required), igual ao login: é justamente para quem
     # não consegue entrar. O Django nunca revela se o e-mail existe ou não
     # (a tela "enviado" é sempre a mesma), e o link expira sozinho.
     path(

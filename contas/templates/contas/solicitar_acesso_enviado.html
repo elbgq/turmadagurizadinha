@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Pedido enviado{% endblock %}
+
+{% block content %}
+<h1>Pedido enviado</h1>
+<p>Recebemos o seu pedido de acesso. Quando a equipe da Turma da Gurizadinha aprovar, você recebe um e-mail com o link para criar a sua senha — confira também a caixa de spam.</p>
+<p><a href="{% url 'contas:login' %}">Voltar para o login</a></p>
+{% endblock %}

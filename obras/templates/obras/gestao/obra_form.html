@@ -9,9 +9,34 @@
 <form class="form form--obra" method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
+
+    {# "Publicada" em destaque no topo do formulário, com o efeito de #}
+    {# marcar ou não (pedido do Eloi em 29/10/2026 — antes ficava perdido #}
+    {# no meio dos outros campos). #}
+    <div class="form__publicacao{% if form.publicada.value %} form__publicacao--publicada{% endif %}">
+        <label class="form__publicacao-opcao" for="{{ form.publicada.id_for_label }}">
+            {{ form.publicada }}
+            <span>Publicar esta obra</span>
+        </label>
+        <p class="form__publicacao-status">
+            {% if obra %}
+                Situação atual: <strong>{% if obra.publicada %}publicada{% else %}não publicada (rascunho){% endif %}</strong>
+            {% else %}
+                Obra nova: começa como <strong>não publicada (rascunho)</strong>, a não ser que você marque acima.
+            {% endif %}
+        </p>
+        <ul class="form__publicacao-efeitos">
+            <li><strong>Marcada:</strong> a obra aparece na Home e na Lista de obras, e todos os usuários com login (professores e alunos) podem abrir a página dela, o Resumo, a Atividade e o Quiz.</li>
+            <li><strong>Desmarcada:</strong> a obra fica escondida de professores e alunos e só aparece aqui, em Gerenciar obras. A equipe editorial ainda pode conferir o Resumo, a Atividade e o Quiz antes de publicar.</li>
+        </ul>
+        {{ form.publicada.errors }}
+    </div>
+
     {% for field in form %}
         {% if field.name == "slug" %}
             {{ field }}
+        {% elif field.name == "publicada" %}
+            {# já mostrado em destaque no topo #}
         {% else %}
             <div class="form__campo">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Solicitar acesso{% endblock %}
+
+{% block content %}
+<h1>Solicitar acesso</h1>
+<p>As contas da Turma da Gurizadinha são criadas pela nossa equipe. Conte quem você é e a equipe vai analisar o pedido. Quando ele for aprovado, você recebe por e-mail um link para criar a sua senha.</p>
+<p>Alunos não precisam pedir sozinhos: o professor ou a escola pode listar os alunos da turma no mesmo pedido.</p>
+
+{% if limite %}
+    <p><strong>Recebemos muitos pedidos deste endereço na última hora. Tente de novo mais tarde.</strong></p>
+{% else %}
+<form class="form" method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        {% if field.name == "site" %}
+            {# Armadilha para robôs: escondida de quem usa o site de verdade. #}
+            <div style="position: absolute; left: -10000px;" aria-hidden="true">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <input type="text" name="{{ field.html_name }}" id="{{ field.id_for_label }}" tabindex="-1" autocomplete="off">
+            </div>
+        {% else %}
+            <div class="form__campo">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {{ field.errors }}
+            </div>
+        {% endif %}
+    {% endfor %}
+    <button type="submit" class="btn">Enviar pedido</button>
+</form>
+{% endif %}
+
+<p><a href="{% url 'contas:login' %}">Voltar para o login</a></p>
+{% endblock %}

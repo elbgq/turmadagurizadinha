@@ -1,8 +1,15 @@
 from django.contrib import admin
+from django.contrib.admin.utils import unquote
 from django.contrib.auth.admin import UserAdmin
+from django.contrib import messages
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.utils import timezone
 
-from .models import Perfil
+from .emails import enviar_link_criar_senha
+from .forms import NovoUsuarioAdminForm
+from .models import Perfil, SolicitacaoAcesso
 
 
 class PerfilInline(admin.StackedInline):
@@ -16,19 +23,163 @@ class UsuarioAdmin(UserAdmin):
     Reaproveita o UserAdmin padrão do Django (gerencia login, senha e
     permissões) só acrescentando o Perfil (tipo: professor/aluno/outro)
     como inline — evita duplicar tela de cadastro de usuário no Admin.
+
+    Desde 29/10/2026 é aqui que nascem todas as contas (não há mais
+    autocadastro): o superusuário e o grupo "Equipe administrativa" (ver
+    migração 0005) criam alunos e professores. Quem não é superusuário
+    não vê nem altera os campos de permissão (staff, superusuário, grupos,
+    permissões) — assim a equipe administrativa cria contas sem conseguir
+    dar a si mesma (ou a outros) mais acesso ao Admin. Nas contas de staff
+    ela só altera o tipo; nas de superusuário, nada.
     """
 
     inlines = (PerfilInline,)
+    add_form = NovoUsuarioAdminForm
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("first_name", "email", "tipo", "usable_password", "password1", "password2"),
+            },
+        ),
+    )
+    list_display = ("username", "first_name", "tipo", "is_active", "is_staff")
+    list_filter = ("perfil__tipo", "is_active", "is_staff", "is_superuser", "groups")
+
+    @admin.display(description="Tipo", ordering="perfil__tipo")
+    def tipo(self, obj):
+        perfil = getattr(obj, "perfil", None)
+        return perfil.get_tipo_display() if perfil else "—"
 
     def get_inline_instances(self, request, obj=None):
         # Na tela "Adicionar usuário" o Perfil ainda não aparece: ele é
         # criado pelo sinal de contas/signals.py ao salvar, e o inline aqui
-        # tentaria criar um segundo. Depois de salvar, o Admin abre a tela
-        # de edição, onde o tipo do Perfil pode ser ajustado.
+        # tentaria criar um segundo. O tipo vem do campo "Tipo" do
+        # NovoUsuarioAdminForm (gravado em save_model); depois de salvar,
+        # o Admin abre a tela de edição, onde o tipo pode ser ajustado.
         if obj is None:
             return []
         return super().get_inline_instances(request, obj)
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not change and "tipo" in form.cleaned_data:
+            obj.perfil.tipo = form.cleaned_data["tipo"]
+            obj.perfil.save()
+            if not form.cleaned_data.get("set_usable_password", True):
+                enviar_link_criar_senha(request, obj)
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj is None or request.user.is_superuser:
+            return fieldsets
+        # Equipe administrativa: da seção "Permissões" fica só "Ativo"
+        # (para bloquear o acesso de alguém sem apagar a conta).
+        return tuple(
+            (nome, {**opcoes, "fields": ("is_active",)})
+            if "is_superuser" in opcoes.get("fields", ())
+            else (nome, opcoes)
+            for nome, opcoes in fieldsets
+        )
+
+    def _conta_de_staff_protegida(self, request, obj):
+        return obj is not None and not request.user.is_superuser and obj.is_staff
+
+    def get_readonly_fields(self, request, obj=None):
+        # Conta de staff (ex.: colegas da equipe): quem não é superusuário
+        # só pode ajustar o tipo, no Perfil (inline) — os dados da conta
+        # ficam só para leitura (pedido do Eloi em 29/10/2026).
+        if self._conta_de_staff_protegida(request, obj):
+            return [campo for _, opcoes in self.get_fieldsets(request, obj) for campo in opcoes["fields"]]
+        return super().get_readonly_fields(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        # Contas de superusuário ficam só com o superusuário — nem o tipo
+        # a equipe altera nelas.
+        if obj is not None and not request.user.is_superuser and obj.is_superuser:
+            return False
+        return super().has_change_permission(request, obj)
+
+    def user_change_password(self, request, id, form_url=""):
+        # A troca de senha de contas de staff fica só com o superusuário
+        # (o Django só checaria has_change_permission, que agora libera
+        # contas de staff para ajustar o tipo).
+        usuario = self.get_object(request, unquote(id))
+        if self._conta_de_staff_protegida(request, usuario):
+            raise PermissionDenied
+        return super().user_change_password(request, id, form_url)
+
 
 admin.site.unregister(User)
 admin.site.register(User, UsuarioAdmin)
+
+
+@admin.register(SolicitacaoAcesso)
+class SolicitacaoAcessoAdmin(admin.ModelAdmin):
+    """
+    Pedidos do formulário público "Solicitar acesso" (ver contas/views.py).
+    Os dados do pedido não são editáveis: a equipe só aprova (cria a conta
+    e manda o link de criar senha) ou recusa, pelas ações da lista.
+    Os alunos listados no pedido são cadastrados à mão, em Usuários.
+    """
+
+    list_display = ("nome", "email", "tipo", "escola_turma", "status", "criada_em")
+    list_filter = ("status", "tipo")
+    search_fields = ("nome", "email", "escola_turma")
+    readonly_fields = (
+        "nome", "email", "tipo", "escola_turma", "alunos", "mensagem",
+        "status", "criada_em", "analisada_em", "analisada_por", "usuario",
+    )
+    actions = ("aprovar_e_criar_conta", "recusar")
+
+    def has_add_permission(self, request):
+        return False  # pedidos só chegam pelo site
+
+    def _marcar(self, request, solicitacao, status, usuario=None):
+        solicitacao.status = status
+        solicitacao.analisada_em = timezone.now()
+        solicitacao.analisada_por = request.user
+        solicitacao.usuario = usuario
+        solicitacao.save()
+
+    @admin.action(description="Aprovar e criar conta (envia o link de criar senha)", permissions=["change"])
+    def aprovar_e_criar_conta(self, request, queryset):
+        if not request.user.has_perm("auth.add_user"):
+            self.message_user(request, "Você não tem permissão para criar contas.", messages.ERROR)
+            return
+        criadas, ja_existiam = [], []
+        for solicitacao in queryset.filter(status=SolicitacaoAcesso.PENDENTE):
+            existente = User.objects.filter(username__iexact=solicitacao.email).first()
+            if existente:
+                # Não mexe na conta que já existe (nem no tipo): só registra.
+                self._marcar(request, solicitacao, SolicitacaoAcesso.APROVADA, existente)
+                ja_existiam.append(solicitacao.email)
+                continue
+            with transaction.atomic():
+                usuario = User.objects.create_user(
+                    username=solicitacao.email, email=solicitacao.email, first_name=solicitacao.nome
+                )
+                usuario.perfil.tipo = solicitacao.tipo
+                usuario.perfil.save()
+                self._marcar(request, solicitacao, SolicitacaoAcesso.APROVADA, usuario)
+            enviar_link_criar_senha(request, usuario)
+            criadas.append(solicitacao.email)
+        if criadas:
+            self.message_user(request, f"Contas criadas e link de senha enviado: {', '.join(criadas)}.")
+        if ja_existiam:
+            self.message_user(
+                request,
+                f"Já havia conta com este e-mail (nada foi alterado): {', '.join(ja_existiam)}.",
+                messages.WARNING,
+            )
+        if not criadas and not ja_existiam:
+            self.message_user(request, "Nenhum pedido pendente selecionado.", messages.WARNING)
+
+    @admin.action(description="Recusar", permissions=["change"])
+    def recusar(self, request, queryset):
+        total = 0
+        for solicitacao in queryset.filter(status=SolicitacaoAcesso.PENDENTE):
+            self._marcar(request, solicitacao, SolicitacaoAcesso.RECUSADA)
+            total += 1
+        self.message_user(request, f"{total} pedido(s) recusado(s).")

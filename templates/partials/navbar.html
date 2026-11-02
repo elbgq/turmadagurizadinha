@@ -31,7 +31,7 @@
 
     {# Menu suspenso (controle de acesso do app contas) à direita do #}
     {# navbar, acionado pelo botão "⋯" — Django Admin (só staff), #}
-    {# trocar senha e sair, ou links de entrar/cadastrar quando deslogado. #}
+    {# trocar senha e sair, ou os links de entrar/solicitar acesso quando deslogado. #}
     {# Implementado com <details>/<summary> nativos do HTML, sem JS. #}
     <details class="navbar__menu-suspenso">
         <summary class="navbar__menu-botao" aria-label="Abrir menu">&bull;&bull;&bull;</summary>
@@ -48,7 +48,7 @@
                 </form>
             {% else %}
                 <a href="{% url 'contas:login' %}">Entrar</a>
-                <a href="{% url 'contas:cadastro' %}">Cadastre-se</a>
+                <a href="{% url 'contas:solicitar_acesso' %}">Solicitar acesso</a>
             {% endif %}
         </div>
     </details>

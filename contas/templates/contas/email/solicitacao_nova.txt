@@ -1,0 +1,15 @@
+{% autoescape off %}Chegou um novo pedido de acesso pela Turma da Gurizadinha.
+
+Nome: {{ solicitacao.nome }}
+E-mail: {{ solicitacao.email }}
+Tipo: {{ solicitacao.get_tipo_display }}
+Escola e turma: {{ solicitacao.escola_turma }}{% if solicitacao.alunos %}
+
+Alunos para cadastrar:
+{{ solicitacao.alunos }}{% endif %}{% if solicitacao.mensagem %}
+
+Mensagem:
+{{ solicitacao.mensagem }}{% endif %}
+
+Para aprovar ou recusar, acesse o Admin:
+{{ link }}{% endautoescape %}
