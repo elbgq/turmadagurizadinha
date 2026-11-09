@@ -1517,9 +1517,38 @@ button.quiz-alternativa:focus-visible {
     letter-spacing: 0.03em;
 }
 
+/* Relatórios e lançamento da atividade (etapa 3, 09/11/2026). */
+.escola-relatorio__pendente {
+    color: #8a2c20;
+}
+
+.escola-lancamento select,
+.escola-lancamento input {
+    padding: 0.35rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font: inherit;
+}
+
+.escola-lancamento .escola-nota {
+    width: 5rem;
+}
+
+.escola-lancamento input[type="text"] {
+    width: 100%;
+    min-width: 12rem;
+}
+
 @media print {
-    .escola-cartoes__topo {
+    .escola-cartoes__topo,
+    .escola-relatorio__filtro,
+    .escola-relatorio__voltar {
         display: none;
+    }
+
+    .escola-tabela {
+        max-width: none;
+        overflow: visible;
     }
 
     .escola-cartoes {

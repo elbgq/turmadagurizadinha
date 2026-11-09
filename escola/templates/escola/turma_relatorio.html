@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Relatório — {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<p class="escola-relatorio__voltar"><a href="{% url 'escola:turma' turma.pk %}">&larr; {{ turma.nome }}</a></p>
+<h1>Relatório da turma {{ turma.nome }} <small>({{ turma.ano_letivo }})</small></h1>
+{% include "escola/_mensagens.html" %}
+
+<form method="get" class="busca-obras escola-relatorio__filtro">
+    <label for="id_obra">Obra:</label>
+    <select name="obra" id="id_obra" class="busca-obras__categoria" onchange="this.form.submit()">
+        <option value="">Todas as obras (resumo)</option>
+        {% for o in obras %}<option value="{{ o.slug }}"{% if o == obra %} selected{% endif %}>{{ o.titulo }}</option>{% endfor %}
+    </select>
+    <noscript><button type="submit" class="btn btn--pequeno">Ver</button></noscript>
+    <button type="button" class="btn btn--ghost btn--pequeno relatorio__imprimir" onclick="window.print()">Imprimir</button>
+</form>
+
+{% if not obra %}
+    <p>{{ total_alunos }} aluno(s) ativo(s). Média da 1ª tentativa de cada aluno no quiz (antes de repetir).</p>
+    <div class="escola-tabela">
+    <table class="tabela-gestao">
+        <thead><tr><th>Obra</th><th>Fizeram o quiz</th><th>Média (1ª tentativa)</th><th>Entregaram a atividade</th><th></th></tr></thead>
+        <tbody>
+            {% for linha in resumo %}
+                <tr>
+                    <td>{{ linha.obra.titulo }}</td>
+                    <td>{{ linha.fizeram }} de {{ linha.total }}</td>
+                    <td>{% if linha.media_primeira is not None %}{{ linha.media_primeira }}%{% else %}—{% endif %}</td>
+                    <td>{{ linha.entregaram }} de {{ linha.total }}</td>
+                    <td><a href="?obra={{ linha.obra.slug }}">Detalhes</a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">Nenhuma obra publicada.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% else %}
+    <h2>{{ obra.titulo }}</h2>
+    <p>
+        Quiz: {{ detalhe.fizeram }} de {{ total_alunos }} alunos fizeram.
+        {% if detalhe.media_primeira is not None %}Média da 1ª tentativa: <strong>{{ detalhe.media_primeira }}%</strong>; da melhor tentativa: {{ detalhe.media_melhor }}%.{% endif %}
+    </p>
+    <p class="escola-acoes relatorio__imprimir">
+        <a class="btn btn--ciano btn--pequeno" href="{% url 'escola:atividades_lancar' turma.pk %}?obra={{ obra.slug }}">Lançar atividade complementar</a>
+    </p>
+
+    <div class="escola-tabela">
+    <table class="tabela-gestao">
+        <thead>
+            <tr><th>Aluno</th><th>Quiz: 1ª tentativa</th><th>Melhor</th><th>Tentativas</th><th>Atividade</th><th>Nota</th><th>Observação</th></tr>
+        </thead>
+        <tbody>
+            {% for linha in detalhe.linhas %}
+                <tr>
+                    <td><a href="{% url 'escola:aluno_relatorio' linha.aluno.pk %}">{{ linha.aluno.user.first_name }}</a> <small><code>{{ linha.aluno.user.username }}</code></small></td>
+                    {% if linha.quiz %}
+                        <td>{{ linha.quiz.primeira.pontuacao }}/{{ linha.quiz.primeira.total }} ({{ linha.quiz.primeira.porcentagem }}%) em {{ linha.quiz.primeira.tempo_formatado }}</td>
+                        <td>{{ linha.quiz.melhor.porcentagem }}%</td>
+                        <td>{{ linha.quiz.quantidade }}</td>
+                    {% else %}
+                        <td class="escola-relatorio__pendente">Não fez</td><td>—</td><td>0</td>
+                    {% endif %}
+                    <td>{% if linha.entrega %}{{ linha.entrega.get_situacao_display }}{% else %}—{% endif %}</td>
+                    <td>{% if linha.entrega.nota is not None and linha.entrega %}{{ linha.entrega.nota }}{% else %}—{% endif %}</td>
+                    <td>{{ linha.entrega.observacao|default:"" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7">Nenhum aluno ativo na turma.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% if detalhe.perguntas %}
+        <h2>Acertos por pergunta</h2>
+        <p>Na 1ª tentativa de cada aluno. As perguntas com menos acertos merecem ser retomadas em aula.</p>
+        <div class="escola-tabela">
+        <table class="tabela-gestao">
+            <thead><tr><th>Pergunta</th><th>Acertaram</th><th>Tempo médio</th></tr></thead>
+            <tbody>
+                {% for p in detalhe.perguntas %}
+                    <tr>
+                        <td>{{ p.enunciado }}</td>
+                        <td class="{% if p.porcentagem < 50 %}quiz-respostas--errada{% endif %}">{{ p.certas }} de {{ p.respostas }} ({{ p.porcentagem }}%)</td>
+                        <td>{{ p.tempo_medio }} s</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

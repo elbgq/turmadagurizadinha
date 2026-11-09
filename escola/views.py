@@ -20,16 +20,19 @@ from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from contas.emails import enviar_link_criar_senha
 from contas.escopo import alunos_visiveis, do_escopo_ou_404, professores_visiveis, turmas_visiveis
 from contas.models import LIMITE_ALUNOS_POR_TURMA, Perfil, Turma
 
+from . import relatorios
 from .acessos import gerar_login, gerar_senha
 from .forms import (
-    AlunoForm, AlunosEmLoteForm, ConsentimentoForm, EditarAlunoForm, ProfessorForm, TurmaForm,
+    AlunoForm, AlunosEmLoteForm, ConsentimentoForm, EditarAlunoForm, LinhaEntregaForm, ProfessorForm, TurmaForm,
 )
+from .models import EntregaAtividade
 
 # Cartões com as senhas recém-geradas ficam na sessão do professor até a
 # próxima geração (a senha não pode ser lida de volta do banco).
@@ -363,3 +366,85 @@ def aluno_consentimento(request, pk):
     return render(request, "escola/consentimento_form.html", {
         "form": form, "aluno": perfil, "consentimentos": perfil.consentimentos.all(),
     })
+
+
+# --------------------------------------------------------------------
+# Etapa 3 (09/11/2026): relatórios por turma e por aluno e lançamento da
+# atividade complementar. Cálculos em relatorios.py.
+# --------------------------------------------------------------------
+
+
+def _obra_escolhida(request, obras):
+    slug = request.GET.get("obra")
+    if slug:
+        return obras.filter(slug=slug).first()
+    return None
+
+
+@area_da_escola("contas.ver_desempenho_turma")
+def turma_relatorio(request, pk):
+    turma = _turma_do_professor(request, pk)
+    alunos = turma.alunos_ativos().select_related("user").order_by("user__first_name")
+    obras = relatorios.obras_do_relatorio()
+    obra = _obra_escolhida(request, obras)
+    contexto = {"turma": turma, "obras": obras, "obra": obra, "total_alunos": alunos.count()}
+    if obra:
+        contexto["detalhe"] = relatorios.detalhe_da_obra(alunos, obra)
+    else:
+        contexto["resumo"] = relatorios.resumo_da_turma(alunos)
+    return render(request, "escola/turma_relatorio.html", contexto)
+
+
+@area_da_escola("contas.ver_desempenho_turma")
+def aluno_relatorio(request, pk):
+    aluno = _aluno_do_professor(request, pk)
+    return render(request, "escola/aluno_relatorio.html", {
+        "aluno": aluno, "turma": aluno.turma, **relatorios.historico_do_aluno(aluno),
+    })
+
+
+@area_da_escola("contas.ver_desempenho_turma")
+def atividades_lancar(request, pk):
+    """
+    Lançamento da atividade complementar de uma obra para a turma toda, numa
+    tela só: situação (entregou / não entregou), nota opcional e observação
+    por aluno. Situação em branco apaga o lançamento que existia.
+    """
+    turma = _turma_do_professor(request, pk)
+    obras = relatorios.obras_do_relatorio()
+    obra = _obra_escolhida(request, obras)
+    if obra is None:
+        return render(request, "escola/atividades_escolher.html", {"turma": turma, "obras": obras})
+
+    alunos = list(turma.alunos_ativos().select_related("user").order_by("user__first_name"))
+    existentes = {e.aluno_id: e for e in EntregaAtividade.objects.filter(aluno__in=alunos, obra=obra)}
+
+    def inicial(aluno):
+        entrega = existentes.get(aluno.pk)
+        if not entrega:
+            return {}
+        return {"situacao": entrega.situacao, "nota": entrega.nota, "observacao": entrega.observacao}
+
+    dados = request.POST if request.method == "POST" else None
+    linhas = [LinhaEntregaForm(dados, aluno=a, initial=inicial(a)) for a in alunos]
+    if request.method == "POST" and all(f.is_valid() for f in linhas):
+        with transaction.atomic():
+            for form in linhas:
+                entrega = existentes.get(form.aluno.pk)
+                situacao = form.cleaned_data["situacao"]
+                if not situacao:
+                    if entrega:
+                        entrega.delete()
+                    continue
+                if entrega is None:
+                    entrega = EntregaAtividade(aluno=form.aluno, obra=obra, turma=turma)
+                if not form.has_changed() and entrega.pk:
+                    continue
+                entrega.situacao = situacao
+                entrega.nota = form.cleaned_data["nota"]
+                entrega.observacao = form.cleaned_data["observacao"]
+                entrega.registrado_por = request.user
+                entrega.save()
+        messages.success(request, f"Atividade complementar de \"{obra.titulo}\" salva.")
+        return redirect(f"{reverse('escola:turma_relatorio', args=[turma.pk])}?obra={obra.slug}")
+    return render(request, "escola/atividades_lancar.html", {"turma": turma, "obra": obra, "linhas": linhas})

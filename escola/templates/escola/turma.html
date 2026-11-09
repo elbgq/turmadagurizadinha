@@ -14,6 +14,8 @@
         <a class="btn" href="{% url 'escola:aluno_novo' turma.pk %}">+ Aluno</a>
         <a class="btn btn--ghost" href="{% url 'escola:alunos_lote' turma.pk %}">+ Vários alunos (lista)</a>
     {% endif %}
+    <a class="btn btn--ciano" href="{% url 'escola:turma_relatorio' turma.pk %}">Relatório da turma</a>
+    <a class="btn btn--ghost" href="{% url 'escola:atividades_lancar' turma.pk %}">Lançar atividade complementar</a>
     {% if tem_cartoes %}<a class="btn btn--ciano" href="{% url 'escola:cartoes' turma.pk %}">Cartões gerados agora</a>{% endif %}
 </p>
 
@@ -23,7 +25,7 @@
     <tbody>
         {% for aluno in alunos %}
             <tr>
-                <td>{{ aluno.user.first_name }}</td>
+                <td><a href="{% url 'escola:aluno_relatorio' aluno.pk %}" title="Ver desempenho">{{ aluno.user.first_name }}</a></td>
                 <td><code>{{ aluno.user.username }}</code></td>
                 <td>
                     {% with termo=aluno.consentimento_valido %}

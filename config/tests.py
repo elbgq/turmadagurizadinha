@@ -24,7 +24,7 @@ class MediaEmProducaoTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        (Path(TEMP_MEDIA) / "ilustracao.txt").write_text("conteúdo de teste")
+        (Path(TEMP_MEDIA) / "ilustracao.txt").write_text("conteudo de teste")
 
     @classmethod
     def tearDownClass(cls):

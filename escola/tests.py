@@ -329,3 +329,153 @@ class EscolaBloqueadaTests(EscolasMixin, TestCase):
         self.escola_a.save()
         self.client.force_login(self.prof_a)
         self.assertRedirects(self.client.get(reverse("escola:turmas")), reverse("contas:login"))
+
+
+# --------------------------------------------------------------------
+# Etapa 3 (09/11/2026): relatórios por turma/aluno e atividade complementar
+# --------------------------------------------------------------------
+
+from decimal import Decimal  # noqa: E402
+
+from quiz.models import RespostaQuiz  # noqa: E402
+
+from . import relatorios  # noqa: E402
+from .models import EntregaAtividade  # noqa: E402
+
+
+class RelatoriosMixin(EscolasMixin):
+    def setUp(self):
+        super().setUp()
+        self.obra = Obra.objects.create(titulo="Lenda da Erva-Mate", slug="lenda", publicada=True)
+        self.outra_obra = Obra.objects.create(titulo="Negrinho do Pastoreio", slug="negrinho", publicada=True)
+        Obra.objects.create(titulo="Rascunho", slug="rascunho", publicada=False)
+        self.aluno_a3 = criar_conta("aluno.a3", Perfil.ALUNO, self.escola_a, self.turma_a)
+
+    def jogar(self, usuario, pontuacao, total=2, obra=None, respostas=(), turma=None):
+        resultado = ResultadoQuiz.objects.create(
+            perfil=usuario.perfil, turma=turma or usuario.perfil.turma, obra=obra or self.obra,
+            pontuacao=pontuacao, total=total, tempo_segundos=60,
+        )
+        for ordem, (enunciado, correta) in enumerate(respostas, start=1):
+            RespostaQuiz.objects.create(
+                resultado=resultado, enunciado=enunciado, correta=correta, tempo_segundos=10 * ordem, ordem=ordem
+            )
+        return resultado
+
+
+class CalculosDoRelatorioTests(RelatoriosMixin, TestCase):
+    def test_resumo_usa_a_primeira_tentativa(self):
+        self.jogar(self.aluno_a, 1)  # 50%
+        self.jogar(self.aluno_a, 2)  # 100%, repetição
+        self.jogar(self.aluno_a3, 2)  # 100%
+        EntregaAtividade.objects.create(aluno=self.aluno_a.perfil, obra=self.obra, situacao=EntregaAtividade.ENTREGUE)
+        resumo = {linha["obra"].slug: linha for linha in relatorios.resumo_da_turma(self.turma_a.alunos_ativos())}
+        self.assertEqual(set(resumo), {"lenda", "negrinho"})  # só obras publicadas
+        self.assertEqual(
+            (resumo["lenda"]["fizeram"], resumo["lenda"]["total"], resumo["lenda"]["media_primeira"], resumo["lenda"]["entregaram"]),
+            (2, 2, 75, 1),
+        )
+        self.assertIsNone(resumo["negrinho"]["media_primeira"])
+
+    def test_detalhe_por_aluno_e_por_pergunta(self):
+        self.jogar(self.aluno_a, 1, respostas=[("P1?", True), ("P2?", False)])
+        self.jogar(self.aluno_a, 2, respostas=[("P1?", True), ("P2?", True)])  # repetição não entra nas perguntas
+        self.jogar(self.aluno_a3, 0, respostas=[("P1?", False), ("P2?", False)])
+        detalhe = relatorios.detalhe_da_obra(self.turma_a.alunos_ativos().order_by("user__username"), self.obra)
+        linha = detalhe["linhas"][0]
+        self.assertEqual(linha["aluno"], self.aluno_a.perfil)
+        self.assertEqual((linha["quiz"]["primeira"].porcentagem, linha["quiz"]["melhor"].porcentagem, linha["quiz"]["quantidade"]), (50, 100, 2))
+        self.assertEqual((detalhe["media_primeira"], detalhe["media_melhor"]), (25, 50))
+        self.assertEqual([(p["enunciado"], p["certas"], p["respostas"]) for p in detalhe["perguntas"]], [("P1?", 1, 2), ("P2?", 0, 2)])
+
+    def test_aluno_que_veio_de_outra_turma_traz_o_historico(self):
+        self.jogar(self.aluno_a2, 2, turma=self.turma_a2)
+        self.aluno_a2.perfil.turma = self.turma_a
+        self.aluno_a2.perfil.save()
+        resumo = {linha["obra"].slug: linha for linha in relatorios.resumo_da_turma(self.turma_a.alunos_ativos())}
+        self.assertEqual(resumo["lenda"]["fizeram"], 1)
+
+
+class TelasDoRelatorioTests(RelatoriosMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.prof_a)
+
+    def test_relatorio_da_turma_resumo_e_detalhe(self):
+        self.jogar(self.aluno_a, 1, respostas=[("Quem plantou a erva?", False)])
+        url = reverse("escola:turma_relatorio", args=[self.turma_a.pk])
+        resposta = self.client.get(url)
+        self.assertContains(resposta, "Lenda da Erva-Mate")
+        self.assertContains(resposta, "1 de 2")
+        self.assertNotContains(resposta, "Rascunho")
+        resposta = self.client.get(url, {"obra": "lenda"})
+        self.assertContains(resposta, "1/2 (50%)")
+        self.assertContains(resposta, "Não fez")  # aluno_a3
+        self.assertContains(resposta, "Quem plantou a erva?")
+        self.assertNotContains(resposta, "aluno.a2")  # aluno de outra turma
+
+    def test_relatorio_do_aluno(self):
+        self.jogar(self.aluno_a, 2, respostas=[("P1?", True)])
+        EntregaAtividade.objects.create(
+            aluno=self.aluno_a.perfil, obra=self.obra, turma=self.turma_a,
+            situacao=EntregaAtividade.ENTREGUE, nota=Decimal("8.5"), observacao="Caprichou",
+        )
+        resposta = self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk]))
+        self.assertContains(resposta, "2 de 2")
+        self.assertContains(resposta, "Caprichou")
+        self.assertContains(resposta, "8,5")
+
+    def test_isolamento_dos_relatorios(self):
+        self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_a2.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_b.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_b.perfil.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("escola:atividades_lancar", args=[self.turma_b.pk])).status_code, 404)
+        self.client.force_login(self.admin_a)  # admin da escola não vê desempenho
+        self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_a.pk])).status_code, 403)
+        self.client.force_login(self.aluno_a)
+        self.assertEqual(self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk])).status_code, 403)
+
+    def _dados(self, **por_aluno):
+        dados = {}
+        for perfil in (self.aluno_a.perfil, self.aluno_a3.perfil):
+            situacao, nota, obs = por_aluno.get(perfil.user.username, ("", "", ""))
+            dados.update({f"aluno{perfil.pk}-situacao": situacao, f"aluno{perfil.pk}-nota": nota, f"aluno{perfil.pk}-observacao": obs})
+        return dados
+
+    def test_lanca_atividade_da_turma(self):
+        url = reverse("escola:atividades_lancar", args=[self.turma_a.pk]) + "?obra=lenda"
+        self.assertContains(self.client.get(url), "aluno.a3")
+        resposta = self.client.post(url, self._dados(**{
+            "aluno.a": ("entregue", "9", "Muito bem"), "aluno.a3": ("nao_entregue", "", ""),
+        }))
+        self.assertRedirects(resposta, reverse("escola:turma_relatorio", args=[self.turma_a.pk]) + "?obra=lenda")
+        entrega = EntregaAtividade.objects.get(aluno=self.aluno_a.perfil)
+        self.assertEqual((entrega.situacao, entrega.nota, entrega.turma, entrega.registrado_por), ("entregue", Decimal("9"), self.turma_a, self.prof_a))
+        self.assertEqual(EntregaAtividade.objects.count(), 2)
+        # "—" apaga o lançamento; o outro continua.
+        self.client.post(url, self._dados(**{"aluno.a": ("entregue", "9", "Muito bem")}))
+        self.assertEqual(list(EntregaAtividade.objects.values_list("aluno__user__username", flat=True)), ["aluno.a"])
+
+    def test_lancamento_invalido_nao_grava_nada(self):
+        url = reverse("escola:atividades_lancar", args=[self.turma_a.pk]) + "?obra=lenda"
+        resposta = self.client.post(url, self._dados(**{
+            "aluno.a": ("entregue", "11", ""), "aluno.a3": ("nao_entregue", "5", ""),
+        }))
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Não dá para dar nota a quem não entregou.")
+        self.assertFalse(EntregaAtividade.objects.exists())
+
+    def test_sem_obra_mostra_a_lista_para_escolher(self):
+        resposta = self.client.get(reverse("escola:atividades_lancar", args=[self.turma_a.pk]))
+        self.assertContains(resposta, "?obra=lenda")
+        self.assertNotContains(resposta, "rascunho")
+        resposta = self.client.get(reverse("escola:atividades_lancar", args=[self.turma_a.pk]), {"obra": "rascunho"})
+        self.assertNotContains(resposta, "aluno.a3")
+
+    def test_equipe_administrativa_consulta_no_admin(self):
+        from django.contrib.auth.models import Group
+
+        equipe = User.objects.create_user("equipe@x.com", is_staff=True)
+        equipe.groups.add(Group.objects.get(name="Equipe administrativa"))
+        self.client.force_login(equipe)
+        self.assertEqual(self.client.get(reverse("admin:escola_entregaatividade_changelist")).status_code, 200)

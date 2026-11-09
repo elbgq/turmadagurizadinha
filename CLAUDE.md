@@ -44,6 +44,13 @@ Cliente: Iolanda Vitoria Rohde Wilhelm. Desenvolvedor: Eloi. Contrato assinado e
 
 ## Estado atual (atualizar ao fim de cada sessão)
 
+- **09/11/2026 — Multiescola, etapa 3 (relatórios por turma e atividade complementar)**: model `escola.EntregaAtividade` (aluno, obra, turma da época, situação entregou/não entregou, nota 0–10 opcional, observação, registrado_por; único por aluno+obra; migrations `escola/0001` e `escola/0002` — view para a "Equipe administrativa", Admin só de consulta com filtro por escola/turma/obra). Cálculos em `escola/relatorios.py`.
+  - `escola:turma_relatorio` (`/escola/turmas/<pk>/relatorio/`, `?obra=slug`): resumo por obra publicada (quantos fizeram o quiz, média da **1ª tentativa**, quantos entregaram a atividade) e, por obra, cada aluno (1ª tentativa com tempo, melhor %, nº de tentativas, atividade e nota) + acertos e tempo médio por pergunta (1as tentativas). Considera os alunos que estão hoje na turma, com todo o histórico deles.
+  - `escola:aluno_relatorio`: histórico completo do aluno (quiz com detalhe por pergunta e turma da época; atividades).
+  - `escola:atividades_lancar` (`?obra=slug`): lançamento da turma toda numa tela (situação/nota/observação por aluno; "—" apaga; tudo ou nada se houver erro).
+  - Permissão `contas.ver_desempenho_turma` (grupo Professor); admin da escola não vê desempenho (403); fora do escopo 404. Botões "Relatório da turma" e "Lançar atividade complementar" na tela da turma; nome do aluno leva ao relatório dele. Botão "Imprimir" (CSS de impressão esconde filtro/voltar).
+  - 234 testes (10 novos).
+
 - **09/11/2026 — Multiescola, etapa 2 (telas do admin da escola e do professor)**: app novo `escola/` (sem models), rotas em `/escola/` (namespace `escola`), link "Minha escola" (admin da escola) ou "Minhas turmas" (professor) na navbar. Decorador `area_da_escola(permissao)`: exige escola no perfil + permissão do grupo do papel (403); registros sempre por `contas.escopo` (404 fora do escopo). A equipe da plataforma continua só no Django Admin.
   - Admin da escola: lista de professores com "N de M ativos", cadastrar (nome + e-mail; link de criar senha por `enviar_link_criar_senha`), editar, desativar/reativar dentro do limite; lista das turmas da escola sem alunos.
   - Professor: minhas turmas, nova turma (escola e professor automáticos; nome único por escola e ano), editar/encerrar turma; na turma: + aluno, + vários alunos (um nome por linha, valida as vagas antes e cria tudo ou nada), editar/mudar de turma (só entre as próprias turmas ativas; o histórico vai junto), desativar/reativar, nova senha (um aluno ou a turma toda), registrar termo do responsável (LGPD), coluna "Termo do responsável".

@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 
 from contas.models import LIMITE_ALUNOS_POR_TURMA, ConsentimentoResponsavel, Perfil, Turma
 
+from .models import EntregaAtividade
+
 
 class ProfessorForm(forms.Form):
     """Cadastro e edição de professor pelo admin da escola (nome e e-mail)."""
@@ -131,3 +133,27 @@ class ConsentimentoForm(forms.ModelForm):
             "data_consentimento": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
             "observacoes": forms.Textarea(attrs={"rows": 3}),
         }
+
+
+class LinhaEntregaForm(forms.Form):
+    """Uma linha da tela "Lançar atividade" (um aluno). Situação em branco = sem registro."""
+
+    situacao = forms.ChoiceField(
+        label="Situação", required=False,
+        choices=[("", "—")] + EntregaAtividade.SITUACAO_CHOICES,
+    )
+    nota = forms.DecimalField(label="Nota", required=False, min_value=0, max_value=10, max_digits=4, decimal_places=1)
+    observacao = forms.CharField(label="Observação", required=False, max_length=300)
+
+    def __init__(self, *args, aluno, **kwargs):
+        self.aluno = aluno
+        super().__init__(*args, prefix=f"aluno{aluno.pk}", **kwargs)
+        self.fields["nota"].widget.attrs.update({"step": "0.5", "class": "escola-nota"})
+
+    def clean(self):
+        dados = super().clean()
+        if not dados.get("situacao") and (dados.get("nota") is not None or dados.get("observacao")):
+            raise ValidationError("Escolha a situação para lançar nota ou observação.")
+        if dados.get("situacao") == EntregaAtividade.NAO_ENTREGUE and dados.get("nota") is not None:
+            raise ValidationError("Não dá para dar nota a quem não entregou.")
+        return dados

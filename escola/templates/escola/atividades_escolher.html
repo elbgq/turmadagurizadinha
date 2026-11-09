@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Lançar atividade complementar{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'escola:turma' turma.pk %}">&larr; {{ turma.nome }}</a></p>
+<h1>Lançar atividade complementar — {{ turma.nome }}</h1>
+<p>Escolha a obra da atividade:</p>
+<ul>
+    {% for obra in obras %}
+        <li><a href="?obra={{ obra.slug }}">{{ obra.titulo }}</a></li>
+    {% empty %}
+        <li>Nenhuma obra publicada.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
