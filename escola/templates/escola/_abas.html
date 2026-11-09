@@ -1,0 +1,8 @@
+{# Abas da área da escola: o admin da escola vê Professores e Turmas; o professor, só as turmas. #}
+<p class="escola-abas">
+    <strong>{{ request.user.perfil.escola }}</strong>
+    {% if perms.contas.cadastrar_professores %}
+        · <a href="{% url 'escola:professores' %}">Professores</a>
+        · <a href="{% url 'escola:turmas' %}">Turmas</a>
+    {% endif %}
+</p>

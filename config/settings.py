@@ -94,6 +94,7 @@ LOCAL_APPS = [
     "contas",  # Fase 4: contas (criadas pela equipe no Admin), login e logout (login obrigatório em todo o site)
     "obras",   # Fase 5: Home, Página da Obra, atividades de apoio para impressão (Questao/Alternativa)
     "quiz",    # Fase 7: Módulo de Quiz (temporizador, pontuação, relatório de desempenho)
+    "escola",  # Multiescola (09/11/2026): telas do admin da escola e do professor
 ]
 
 INSTALLED_APPS = [

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Novo aluno{% endblock %}
+
+{% block content %}
+<h1>Novo aluno — {{ turma.nome }}</h1>
+<p>O usuário e a senha são gerados automaticamente e aparecem no cartão de acesso, para imprimir. O aluno não precisa de e-mail.</p>
+
+<form class="form" method="post" novalidate>
+    {% include "escola/_form_campos.html" %}
+    <button type="submit" class="btn">Cadastrar</button>
+    <a href="{% url 'escola:turma' turma.pk %}">Cancelar</a>
+</form>
+{% endblock %}

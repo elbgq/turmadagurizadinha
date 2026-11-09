@@ -1,0 +1,1 @@
+{% for message in messages %}<p class="mensagem{% if message.level >= 30 %} mensagem--erro{% endif %}">{{ message }}</p>{% endfor %}

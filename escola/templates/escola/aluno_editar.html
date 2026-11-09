@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Editar aluno{% endblock %}
+
+{% block content %}
+<h1>Editar aluno ou mudar de turma</h1>
+<p>Usuário: <code>{{ aluno.user.username }}</code>. Ao mudar de turma, o histórico do quiz vai junto com o aluno.</p>
+
+<form class="form" method="post" novalidate>
+    {% include "escola/_form_campos.html" %}
+    <button type="submit" class="btn">Salvar</button>
+    <a href="{% url 'escola:turma' turma.pk %}">Cancelar</a>
+</form>
+{% endblock %}

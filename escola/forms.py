@@ -1,0 +1,133 @@
+from django import forms
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+
+from contas.models import LIMITE_ALUNOS_POR_TURMA, ConsentimentoResponsavel, Perfil, Turma
+
+
+class ProfessorForm(forms.Form):
+    """Cadastro e edição de professor pelo admin da escola (nome e e-mail)."""
+
+    nome = forms.CharField(label="Nome", max_length=150)
+    email = forms.EmailField(label="E-mail", help_text="É o login do professor. O link para criar a senha vai para este e-mail.")
+
+    def __init__(self, *args, escola, professor=None, **kwargs):
+        self.escola = escola
+        self.professor = professor  # User, na edição
+        super().__init__(*args, **kwargs)
+        if professor is not None:
+            self.fields["nome"].initial = professor.first_name
+            self.fields["email"].initial = professor.email
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        outros = User.objects.filter(username__iexact=email)
+        if self.professor is not None:
+            outros = outros.exclude(pk=self.professor.pk)
+        if outros.exists():
+            raise ValidationError("Já existe uma conta cadastrada com este e-mail.")
+        return email
+
+    def clean(self):
+        dados = super().clean()
+        if self.professor is None:
+            # Limite do plano (Perfil.clean), antes de criar a conta.
+            try:
+                Perfil(tipo=Perfil.PROFESSOR, escola=self.escola).clean()
+            except ValidationError as erro:
+                for mensagens in erro.message_dict.values():
+                    for mensagem in mensagens:
+                        self.add_error(None, mensagem)
+        return dados
+
+
+class TurmaForm(forms.ModelForm):
+    class Meta:
+        model = Turma
+        fields = ["nome", "ano_letivo", "ativa"]
+
+    def __init__(self, *args, escola, **kwargs):
+        self.escola = escola
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None:
+            del self.fields["ativa"]
+
+    def clean(self):
+        dados = super().clean()
+        nome, ano = dados.get("nome"), dados.get("ano_letivo")
+        if nome and ano:
+            repetida = Turma.objects.filter(escola=self.escola, nome__iexact=nome, ano_letivo=ano)
+            if self.instance.pk:
+                repetida = repetida.exclude(pk=self.instance.pk)
+            if repetida.exists():
+                raise ValidationError("A escola já tem uma turma com este nome neste ano letivo.")
+        return dados
+
+
+class AlunoForm(forms.Form):
+    nome = forms.CharField(label="Nome do aluno", max_length=150)
+
+
+class AlunosEmLoteForm(forms.Form):
+    nomes = forms.CharField(
+        label="Nomes dos alunos",
+        widget=forms.Textarea(attrs={"rows": 12}),
+        help_text="Um aluno por linha. Pode colar a lista da planilha da escola.",
+    )
+
+    def __init__(self, *args, turma, **kwargs):
+        self.turma = turma
+        super().__init__(*args, **kwargs)
+
+    def clean_nomes(self):
+        nomes = [" ".join(linha.split()) for linha in self.cleaned_data["nomes"].splitlines()]
+        nomes = [nome[:150] for nome in nomes if nome]
+        if not nomes:
+            raise ValidationError("Informe ao menos um nome.")
+        vagas = LIMITE_ALUNOS_POR_TURMA - self.turma.alunos_ativos().count()
+        if len(nomes) > vagas:
+            raise ValidationError(
+                f"A turma tem {vagas} vaga(s) (limite de {LIMITE_ALUNOS_POR_TURMA} alunos) "
+                f"e a lista tem {len(nomes)} nomes."
+            )
+        return nomes
+
+
+class EditarAlunoForm(forms.Form):
+    """Nome e turma do aluno — o professor pode movê-lo entre as próprias turmas."""
+
+    nome = forms.CharField(label="Nome do aluno", max_length=150)
+    turma = forms.ModelChoiceField(label="Turma", queryset=Turma.objects.none())
+
+    def __init__(self, *args, aluno, turmas, **kwargs):
+        self.aluno = aluno  # Perfil
+        super().__init__(*args, **kwargs)
+        self.fields["turma"].queryset = turmas
+        self.fields["nome"].initial = aluno.user.first_name
+        self.fields["turma"].initial = aluno.turma_id
+
+    def clean(self):
+        dados = super().clean()
+        turma = dados.get("turma")
+        if turma and turma.pk != self.aluno.turma_id:
+            self.aluno.turma = turma
+            try:
+                self.aluno.clean()  # limite de 30 na turma nova
+            except ValidationError as erro:
+                for mensagens in erro.message_dict.values():
+                    for mensagem in mensagens:
+                        self.add_error("turma", mensagem)
+        return dados
+
+
+class ConsentimentoForm(forms.ModelForm):
+    class Meta:
+        model = ConsentimentoResponsavel
+        fields = [
+            "nome_responsavel", "parentesco", "email_responsavel", "telefone_responsavel",
+            "meio", "data_consentimento", "observacoes",
+        ]
+        widgets = {
+            "data_consentimento": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            "observacoes": forms.Textarea(attrs={"rows": 3}),
+        }

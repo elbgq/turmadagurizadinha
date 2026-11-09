@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Termo do responsável{% endblock %}
+
+{% block content %}
+<h1>Termo de consentimento do responsável</h1>
+<p>Aluno: <strong>{{ aluno.user.first_name }}</strong> ({{ aluno.turma.nome }}). Registre aqui o termo assinado pelo pai, mãe ou responsável legal (LGPD). O termo em papel fica guardado na escola.</p>
+
+{% if consentimentos %}
+    <ul>
+        {% for c in consentimentos %}
+            <li>{{ c.nome_responsavel }} ({{ c.parentesco }}), {{ c.data_consentimento|date:"d/m/Y" }}{% if c.revogado_em %} — revogado em {{ c.revogado_em|date:"d/m/Y" }}{% endif %}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<form class="form" method="post" novalidate>
+    {% include "escola/_form_campos.html" %}
+    <button type="submit" class="btn">Registrar</button>
+    <a href="{% url 'escola:turma' aluno.turma_id %}">Cancelar</a>
+</form>
+{% endblock %}

@@ -1427,3 +1427,103 @@ button.quiz-alternativa:focus-visible {
 .form__publicacao-efeitos li + li {
     margin-top: 0.3rem;
 }
+
+/* Área da escola (multiescola, etapa 2 — 09/11/2026): telas do admin da
+   escola e do professor (escola/templates/escola/). Reaproveita .form,
+   .tabela-gestao, .btn e .mensagem; aqui só o que é delas. */
+.escola-abas {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+}
+
+.escola-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.9rem;
+}
+
+.escola-acoes form {
+    margin: 0;
+}
+
+/* No celular a tabela rola de lado dentro da caixa, sem alargar a página. */
+.escola-tabela {
+    overflow-x: auto;
+    /* O body é flex e deixaria o .container crescer com a tabela; a
+       largura da tela menos o padding do .container (2rem de cada lado). */
+    max-width: calc(100vw - 4rem);
+}
+
+/* Ação de POST (desativar, nova senha) com cara de link, como "Editar". */
+.escola-link-botao {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.escola-novas-senhas {
+    margin-top: 1.5rem;
+}
+
+/* Cartões de acesso dos alunos (para imprimir e recortar). */
+.escola-cartoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+@media screen {
+    .escola-cartoes {
+        max-width: calc(100vw - 4rem); /* mesmo motivo de .escola-tabela */
+    }
+}
+
+.escola-cartao {
+    border: 2px dashed var(--cor-secundaria);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    background: #fff;
+    text-align: center;
+    break-inside: avoid;
+}
+
+.escola-cartao p {
+    margin: 0.25rem 0;
+}
+
+.escola-cartao__logo {
+    height: 2.6rem;
+    width: auto;
+}
+
+.escola-cartao__nome {
+    font-family: "Boogaloo", cursive;
+    font-size: 1.4rem;
+}
+
+.escola-cartao__turma,
+.escola-cartao__site {
+    font-size: 0.85rem;
+}
+
+.escola-cartao strong {
+    font-size: 1.15rem;
+    letter-spacing: 0.03em;
+}
+
+@media print {
+    .escola-cartoes__topo {
+        display: none;
+    }
+
+    .escola-cartoes {
+        grid-template-columns: repeat(2, 1fr);
+        margin-top: 0;
+    }
+}

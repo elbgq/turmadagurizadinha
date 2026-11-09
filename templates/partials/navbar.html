@@ -29,6 +29,15 @@
         {% endif %}
     {% endif %}
 
+    {# Área da escola (multiescola, 09/11/2026): só para contas de escola. #}
+    {% if request.user.perfil.escola_id %}
+        {% if request.user.perfil.tipo == "admin_escola" %}
+            <a href="{% url 'escola:professores' %}" class="navbar__link">Minha escola</a>
+        {% elif request.user.perfil.tipo == "professor" %}
+            <a href="{% url 'escola:turmas' %}" class="navbar__link">Minhas turmas</a>
+        {% endif %}
+    {% endif %}
+
     {# Menu suspenso (controle de acesso do app contas) à direita do #}
     {# navbar, acionado pelo botão "⋯" — Django Admin (só staff), #}
     {# trocar senha e sair, ou os links de entrar/solicitar acesso quando deslogado. #}

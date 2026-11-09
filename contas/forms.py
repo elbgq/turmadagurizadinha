@@ -109,7 +109,12 @@ class EmailAuthenticationForm(AuthenticationForm):
     para "E-mail", já que é isso que a pessoa digita para entrar.
     """
 
-    username = forms.CharField(label="E-mail", widget=forms.EmailInput(attrs={"autofocus": True}))
+    # Desde 09/11/2026 o aluno de escola entra com o usuário do cartão de
+    # acesso (ex.: "joao.3oanob"), sem e-mail — por isso o campo é texto.
+    username = forms.CharField(
+        label="E-mail ou usuário",
+        widget=forms.TextInput(attrs={"autofocus": True, "autocapitalize": "none", "autocomplete": "username"}),
+    )
 
     def clean_username(self):
         # Maiúsculas e minúsculas não fazem diferença no e-mail (revisão de

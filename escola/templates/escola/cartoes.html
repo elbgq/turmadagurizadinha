@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Cartões de acesso — {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="escola-cartoes__topo">
+    <p><a href="{% url 'escola:turma' turma.pk %}">&larr; Voltar para a turma</a></p>
+    <h1>Cartões de acesso — {{ turma.nome }}</h1>
+    {% include "escola/_mensagens.html" %}
+    {% if cartoes %}
+        <p>Imprima e recorte os cartões. Depois de sair desta tela, as senhas não podem ser vistas de novo: só gerando uma senha nova.</p>
+        <button type="button" class="btn btn--ciano" onclick="window.print()">Imprimir cartões</button>
+    {% else %}
+        <p>Nenhum cartão para imprimir agora. As senhas não ficam guardadas: na turma, use "Nova senha" (um aluno) ou "Gerar senhas novas para a turma toda".</p>
+    {% endif %}
+</div>
+
+<div class="escola-cartoes">
+    {% for c in cartoes %}
+        <div class="escola-cartao">
+            <img src="{% static 'img/marcas/logo_turmadagurizadinha.png' %}" alt="Turma da Gurizadinha" class="escola-cartao__logo">
+            <p class="escola-cartao__nome">{{ c.nome }}</p>
+            <p class="escola-cartao__turma">{{ turma.nome }}</p>
+            <p>Usuário: <strong>{{ c.login }}</strong></p>
+            <p>Senha: <strong>{{ c.senha }}</strong></p>
+            <p class="escola-cartao__site">{{ endereco }}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

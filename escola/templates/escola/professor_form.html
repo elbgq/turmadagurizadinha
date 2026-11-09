@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{% if professor %}Editar professor(a){% else %}Cadastrar professor(a){% endif %}{% endblock %}
+
+{% block content %}
+{% include "escola/_abas.html" %}
+<h1>{% if professor %}Editar professor(a){% else %}Cadastrar professor(a){% endif %}</h1>
+{% if not professor %}<p>O professor recebe por e-mail um link para criar a própria senha.</p>{% endif %}
+
+<form class="form" method="post" novalidate>
+    {% include "escola/_form_campos.html" %}
+    <button type="submit" class="btn">Salvar</button>
+    <a href="{% url 'escola:professores' %}">Cancelar</a>
+</form>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ turma.nome }}{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'escola:turmas' %}">&larr; Minhas turmas</a></p>
+<h1>{{ turma.nome }} <small>({{ turma.ano_letivo }})</small></h1>
+{% include "escola/_mensagens.html" %}
+
+<p>{{ ativos }} de {{ limite }} alunos ativos.{% if not turma.ativa %} Turma encerrada.{% endif %}
+    <a href="{% url 'escola:turma_editar' turma.pk %}">Editar turma</a></p>
+
+<p class="escola-acoes">
+    {% if ativos < limite %}
+        <a class="btn" href="{% url 'escola:aluno_novo' turma.pk %}">+ Aluno</a>
+        <a class="btn btn--ghost" href="{% url 'escola:alunos_lote' turma.pk %}">+ Vários alunos (lista)</a>
+    {% endif %}
+    {% if tem_cartoes %}<a class="btn btn--ciano" href="{% url 'escola:cartoes' turma.pk %}">Cartões gerados agora</a>{% endif %}
+</p>
+
+<div class="escola-tabela">
+<table class="tabela-gestao">
+    <thead><tr><th>Aluno</th><th>Usuário</th><th>Termo do responsável</th><th>Situação</th><th>Ações</th></tr></thead>
+    <tbody>
+        {% for aluno in alunos %}
+            <tr>
+                <td>{{ aluno.user.first_name }}</td>
+                <td><code>{{ aluno.user.username }}</code></td>
+                <td>
+                    {% with termo=aluno.consentimento_valido %}
+                        {% if termo %}Sim ({{ termo.nome_responsavel }}){% else %}<a href="{% url 'escola:aluno_consentimento' aluno.pk %}">Registrar</a>{% endif %}
+                    {% endwith %}
+                </td>
+                <td>{% if aluno.user.is_active %}Ativo{% else %}Desativado{% endif %}</td>
+                <td class="escola-acoes">
+                    <a href="{% url 'escola:aluno_editar' aluno.pk %}">Editar</a>
+                    {% if aluno.user.is_active %}
+                        <form method="post" action="{% url 'escola:aluno_nova_senha' aluno.pk %}">
+                            {% csrf_token %}<button type="submit" class="escola-link-botao">Nova senha</button>
+                        </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'escola:aluno_ativo' aluno.pk %}">
+                        {% csrf_token %}<button type="submit" class="escola-link-botao">{% if aluno.user.is_active %}Desativar{% else %}Reativar{% endif %}</button>
+                    </form>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5">Nenhum aluno nesta turma ainda.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% if ativos %}
+    <form method="post" action="{% url 'escola:novas_senhas_turma' turma.pk %}" class="escola-novas-senhas"
+          onsubmit="return confirm('Gerar senhas novas para todos os alunos ativos? As senhas atuais deixam de valer.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--ghost">Gerar senhas novas para a turma toda e imprimir os cartões</button>
+    </form>
+    <p><small>As senhas não ficam guardadas para consulta. Para imprimir um cartão de novo, gere uma senha nova.</small></p>
+{% endif %}
+{% endblock %}
