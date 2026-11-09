@@ -170,6 +170,7 @@ def _gravar_resultado(request, obra, tentativa):
     with transaction.atomic():
         resultado = ResultadoQuiz.objects.create(
             perfil=request.user.perfil,
+            turma=request.user.perfil.turma,
             obra=obra,
             pontuacao=sum(1 for r in respostas.values() if r["correta"]),
             total=len(tentativa["perguntas"]),

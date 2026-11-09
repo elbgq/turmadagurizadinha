@@ -1,6 +1,6 @@
 from django.db import models
 
-from contas.models import Perfil
+from contas.models import Perfil, Turma
 from obras.models import Obra
 
 # Regras do quiz definidas pela cliente (reunião de 28/10/2026, documento
@@ -137,6 +137,14 @@ class ResultadoQuiz(models.Model):
     total = models.PositiveIntegerField()
     tempo_segundos = models.PositiveIntegerField()
     criado_em = models.DateTimeField(auto_now_add=True)
+    # Turma em que o aluno estava quando respondeu (multiescola, 09/11/2026),
+    # para o relatório por turma. O histórico continua ligado ao aluno
+    # (perfil) e vai junto se ele mudar de turma. PROTECT: turma com
+    # resultados não é excluída (desative-a), para não perder o histórico.
+    turma = models.ForeignKey(
+        Turma, on_delete=models.PROTECT, null=True, blank=True,
+        related_name="resultados_quiz", verbose_name="Turma na época",
+    )
 
     class Meta:
         verbose_name = "Resultado de quiz"

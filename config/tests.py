@@ -40,7 +40,7 @@ class MediaEmProducaoTests(TestCase):
         self.client.force_login(User.objects.create_user("aluno", password="x"))
         resposta = self.client.get("/media/ilustracao.txt")
         self.assertEqual(resposta.status_code, 200)
-        self.assertEqual(b"".join(resposta.streaming_content), "conteúdo de teste".encode()) # type: ignore
+        self.assertEqual(b"".join(resposta.streaming_content), "conteudo de teste".encode()) # type: ignore
 
     def test_arquivo_inexistente_retorna_404(self):
         self.client.force_login(User.objects.create_user("aluno", password="x"))

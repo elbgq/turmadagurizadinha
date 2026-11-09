@@ -454,3 +454,461 @@ class FalhaNoEnvioDeEmailTests(TestCase):
         self.assertEqual(SolicitacaoAcesso.objects.filter(status=SolicitacaoAcesso.APROVADA).count(), 2)
         self.assertTrue(User.objects.filter(username="caio@escola.com").exists())
         self.assertContains(resposta, "Não foi possível enviar o e-mail")
+
+
+# --------------------------------------------------------------------
+# Multiescola, etapa 1 (09/11/2026): escolas, turmas, papéis, limites,
+# bloqueio automático por contrato, isolamento entre escolas e
+# consentimento LGPD.
+# --------------------------------------------------------------------
+
+from datetime import date, timedelta  # noqa: E402
+
+from django.core.exceptions import ValidationError  # noqa: E402
+from django.urls import include, path  # noqa: E402
+from django.utils import timezone  # noqa: E402
+from django.views.generic import DetailView  # noqa: E402
+
+from .escopo import (  # noqa: E402
+    IsolamentoPorEscolaMixin, alunos_visiveis, do_escopo_ou_404, escola_bloqueada,
+    professores_visiveis, resultados_quiz_visiveis, turmas_visiveis,
+)
+from .middleware import MENSAGEM_ESCOLA_BLOQUEADA  # noqa: E402
+from .models import LIMITE_ALUNOS_POR_TURMA, ConsentimentoResponsavel, Escola, Turma  # noqa: E402
+from .papeis import GRUPO_ADMIN_ESCOLA, GRUPO_ALUNO, GRUPO_PROFESSOR  # noqa: E402
+
+
+def criar_conta(login, tipo, escola=None, turma=None, ativa=True, senha=None):
+    """Conta rápida para os testes (sem senha, a não ser que o teste vá logar pela tela)."""
+    usuario = User.objects.create(username=login, email=login, first_name=login.split("@")[0], is_active=ativa)
+    if senha:
+        usuario.set_password(senha)
+        usuario.save()
+    perfil = usuario.perfil
+    perfil.tipo, perfil.escola, perfil.turma = tipo, escola, turma
+    perfil.save()
+    return usuario
+
+
+class DetalheTurmaTesteView(IsolamentoPorEscolaMixin, DetailView):
+    """View de teste: mostra a turma só se ela estiver no escopo da conta."""
+
+    escopo = "turmas"
+
+    def render_to_response(self, context, **kwargs):
+        from django.http import HttpResponse
+
+        return HttpResponse(self.object.nome)
+
+
+def detalhe_aluno_teste(request, pk):
+    from django.http import HttpResponse
+
+    return HttpResponse(do_escopo_ou_404("alunos", request.user, pk=pk).user.username)
+
+
+def detalhe_professor_teste(request, pk):
+    from django.http import HttpResponse
+
+    return HttpResponse(do_escopo_ou_404("professores", request.user, pk=pk).user.username)
+
+
+def detalhe_resultado_teste(request, pk):
+    from django.http import HttpResponse
+
+    return HttpResponse(str(do_escopo_ou_404("resultados_quiz", request.user, pk=pk).pontuacao))
+
+
+# URLs só destes testes (as telas de verdade são da etapa 2), mais as do
+# site, que a página 404 usa no menu.
+urlpatterns = [
+    path("", include("config.urls")),
+    path("teste/turma/<int:pk>/", DetalheTurmaTesteView.as_view()),
+    path("teste/aluno/<int:pk>/", detalhe_aluno_teste),
+    path("teste/professor/<int:pk>/", detalhe_professor_teste),
+    path("teste/resultado/<int:pk>/", detalhe_resultado_teste),
+]
+
+
+class DuasEscolasMixin:
+    """Escola A e escola B, cada uma com admin, professor, turma e aluno."""
+
+    def setUp(self):
+        super().setUp()
+        self.escola_a = Escola.objects.create(nome="Escola A", limite_professores=3)
+        self.escola_b = Escola.objects.create(nome="Escola B", limite_professores=3)
+        self.admin_a = criar_conta("admin@a.com", Perfil.ADMIN_ESCOLA, self.escola_a)
+        self.admin_b = criar_conta("admin@b.com", Perfil.ADMIN_ESCOLA, self.escola_b)
+        self.prof_a = criar_conta("prof@a.com", Perfil.PROFESSOR, self.escola_a)
+        self.prof_a2 = criar_conta("prof2@a.com", Perfil.PROFESSOR, self.escola_a)
+        self.prof_b = criar_conta("prof@b.com", Perfil.PROFESSOR, self.escola_b)
+        self.turma_a = Turma.objects.create(escola=self.escola_a, nome="3º A", professor=self.prof_a.perfil)
+        self.turma_a2 = Turma.objects.create(escola=self.escola_a, nome="4º A", professor=self.prof_a2.perfil)
+        self.turma_b = Turma.objects.create(escola=self.escola_b, nome="3º B", professor=self.prof_b.perfil)
+        self.aluno_a = criar_conta("aluno@a.com", Perfil.ALUNO, self.escola_a, self.turma_a)
+        self.aluno_a2 = criar_conta("aluno2@a.com", Perfil.ALUNO, self.escola_a, self.turma_a2)
+        self.aluno_b = criar_conta("aluno@b.com", Perfil.ALUNO, self.escola_b, self.turma_b)
+
+
+class EscolaContratoTests(TestCase):
+    def test_situacao_do_acesso_pelas_datas_e_pelo_ativa(self):
+        hoje = timezone.localdate()
+        escola = Escola(nome="X", contrato_inicio=hoje - timedelta(days=10), contrato_fim=hoje)
+        self.assertTrue(escola.esta_liberada())  # o último dia ainda vale
+        self.assertFalse(escola.esta_liberada(hoje + timedelta(days=1)))  # vencido
+        self.assertFalse(escola.esta_liberada(hoje - timedelta(days=11)))  # ainda não começou
+        escola.ativa = False
+        self.assertFalse(escola.esta_liberada())
+        self.assertTrue(Escola(nome="Sem datas").esta_liberada())
+
+    def test_queryset_liberadas_bate_com_esta_liberada(self):
+        hoje = timezone.localdate()
+        liberada = Escola.objects.create(nome="Liberada", contrato_fim=hoje + timedelta(days=5))
+        Escola.objects.create(nome="Vencida", contrato_fim=hoje - timedelta(days=1))
+        Escola.objects.create(nome="Desativada", ativa=False)
+        Escola.objects.create(nome="Futura", contrato_inicio=hoje + timedelta(days=1))
+        self.assertEqual(list(Escola.objects.liberadas()), [liberada])
+
+    def test_fim_antes_do_inicio_e_recusado(self):
+        escola = Escola(nome="X", contrato_inicio=date(2027, 2, 1), contrato_fim=date(2027, 1, 1))
+        with self.assertRaises(ValidationError):
+            escola.full_clean()
+
+
+class LimitesTests(DuasEscolasMixin, TestCase):
+    def test_limite_de_professores_da_escola(self):
+        criar_conta("prof3@a.com", Perfil.PROFESSOR, self.escola_a)  # 3º de 3
+        novo = criar_conta("prof4@a.com", Perfil.OUTRO)
+        novo.perfil.tipo, novo.perfil.escola = Perfil.PROFESSOR, self.escola_a
+        with self.assertRaisesMessage(ValidationError, "Limite do plano atingido"):
+            novo.perfil.full_clean()
+
+    def test_professor_desativado_nao_conta_no_limite(self):
+        criar_conta("prof3@a.com", Perfil.PROFESSOR, self.escola_a, ativa=False)
+        novo = criar_conta("prof4@a.com", Perfil.OUTRO)
+        novo.perfil.tipo, novo.perfil.escola = Perfil.PROFESSOR, self.escola_a
+        novo.perfil.full_clean()  # sem erro: só 2 ativos
+
+    def test_reativar_professor_alem_do_limite_e_recusado(self):
+        criar_conta("prof3@a.com", Perfil.PROFESSOR, self.escola_a)
+        inativo = criar_conta("prof4@a.com", Perfil.PROFESSOR, self.escola_a, ativa=False)
+        inativo.is_active = True
+        with self.assertRaisesMessage(ValidationError, "Limite do plano atingido"):
+            inativo.perfil.full_clean()
+
+    def test_nao_reduz_limite_abaixo_dos_professores_ativos(self):
+        self.escola_a.limite_professores = 1
+        with self.assertRaises(ValidationError):
+            self.escola_a.full_clean()
+
+    def test_limite_de_alunos_por_turma(self):
+        for i in range(LIMITE_ALUNOS_POR_TURMA - 1):  # aluno_a já está na turma
+            criar_conta(f"aluno{i}@x.com", Perfil.ALUNO, self.escola_a, self.turma_a)
+        novo = criar_conta("aluno-novo@a.com", Perfil.ALUNO, self.escola_a)
+        novo.perfil.turma = self.turma_a
+        with self.assertRaisesMessage(ValidationError, f"já tem {LIMITE_ALUNOS_POR_TURMA} alunos"):
+            novo.perfil.full_clean()
+        self.aluno_a.perfil.full_clean()  # quem já está na turma continua válido
+
+    def test_turma_de_outra_escola_e_recusada(self):
+        self.aluno_a.perfil.turma = self.turma_b
+        with self.assertRaisesMessage(ValidationError, "outra escola"):
+            self.aluno_a.perfil.full_clean()
+
+    def test_turma_so_para_aluno(self):
+        self.prof_a.perfil.turma = self.turma_a
+        with self.assertRaisesMessage(ValidationError, "Só alunos"):
+            self.prof_a.perfil.full_clean()
+
+    def test_escola_vem_da_turma(self):
+        novo = criar_conta("aluno-novo@a.com", Perfil.ALUNO)
+        novo.perfil.turma = self.turma_a2
+        novo.perfil.full_clean()
+        self.assertEqual(novo.perfil.escola, self.escola_a)
+
+    def test_admin_da_escola_precisa_de_escola(self):
+        novo = criar_conta("admin-novo@a.com", Perfil.OUTRO)
+        novo.perfil.tipo = Perfil.ADMIN_ESCOLA
+        with self.assertRaises(ValidationError):
+            novo.perfil.full_clean()
+
+    def test_professor_de_outra_escola_nao_assume_turma(self):
+        turma = Turma(escola=self.escola_a, nome="5º A", professor=self.prof_b.perfil)
+        with self.assertRaisesMessage(ValidationError, "não é desta escola"):
+            turma.full_clean()
+
+    def test_professor_com_turmas_nao_muda_de_tipo(self):
+        self.prof_a.perfil.tipo = Perfil.ALUNO
+        with self.assertRaisesMessage(ValidationError, "professor(a) responsável"):
+            self.prof_a.perfil.full_clean()
+
+
+class GruposDePapelTests(TestCase):
+    def test_grupos_existem(self):
+        for nome in (GRUPO_ADMIN_ESCOLA, GRUPO_PROFESSOR, GRUPO_ALUNO, "Equipe administrativa"):
+            self.assertTrue(Group.objects.filter(name=nome).exists(), nome)
+
+    def test_grupo_acompanha_o_tipo_sem_mexer_nos_outros(self):
+        usuario = criar_conta("pessoa@x.com", Perfil.ALUNO)
+        usuario.groups.add(Group.objects.get(name="Equipe editorial"))
+        self.assertEqual(set(usuario.groups.values_list("name", flat=True)), {GRUPO_ALUNO, "Equipe editorial"})
+        usuario.perfil.tipo = Perfil.PROFESSOR
+        usuario.perfil.save()
+        self.assertEqual(set(usuario.groups.values_list("name", flat=True)), {GRUPO_PROFESSOR, "Equipe editorial"})
+        usuario.perfil.tipo = Perfil.OUTRO
+        usuario.perfil.save()
+        self.assertEqual(set(usuario.groups.values_list("name", flat=True)), {"Equipe editorial"})
+
+    def test_permissoes_dos_papeis(self):
+        professor = criar_conta("prof@x.com", Perfil.PROFESSOR)
+        admin_escola = criar_conta("admin@x.com", Perfil.ADMIN_ESCOLA, Escola.objects.create(nome="X"))
+        self.assertTrue(professor.has_perm("contas.cadastrar_alunos"))
+        self.assertFalse(professor.has_perm("contas.cadastrar_professores"))
+        self.assertTrue(admin_escola.has_perm("contas.cadastrar_professores"))
+        self.assertFalse(admin_escola.has_perm("contas.cadastrar_alunos"))
+
+
+@override_settings(ROOT_URLCONF="contas.tests")
+class IsolamentoEntreEscolasTests(DuasEscolasMixin, TestCase):
+    """Fora do escopo da conta, a resposta é 404 (não revela que o registro existe)."""
+
+    def _status(self, usuario, url):
+        self.client.force_login(usuario)
+        return self.client.get(url).status_code
+
+    def test_professor_ve_so_a_propria_turma(self):
+        self.assertEqual(self._status(self.prof_a, f"/teste/turma/{self.turma_a.pk}/"), 200)
+        self.assertEqual(self._status(self.prof_a, f"/teste/turma/{self.turma_b.pk}/"), 404)  # outra escola
+        self.assertEqual(self._status(self.prof_a, f"/teste/turma/{self.turma_a2.pk}/"), 404)  # colega
+
+    def test_admin_da_escola_ve_turmas_e_professores_so_da_propria_escola(self):
+        self.assertEqual(self._status(self.admin_a, f"/teste/turma/{self.turma_a2.pk}/"), 200)
+        self.assertEqual(self._status(self.admin_a, f"/teste/turma/{self.turma_b.pk}/"), 404)
+        self.assertEqual(self._status(self.admin_a, f"/teste/professor/{self.prof_a.perfil.pk}/"), 200)
+        self.assertEqual(self._status(self.admin_a, f"/teste/professor/{self.prof_b.perfil.pk}/"), 404)
+
+    def test_admin_da_escola_nao_ve_alunos(self):
+        self.assertEqual(self._status(self.admin_a, f"/teste/aluno/{self.aluno_a.perfil.pk}/"), 404)
+
+    def test_professor_ve_so_alunos_das_proprias_turmas(self):
+        self.assertEqual(self._status(self.prof_a, f"/teste/aluno/{self.aluno_a.perfil.pk}/"), 200)
+        self.assertEqual(self._status(self.prof_a, f"/teste/aluno/{self.aluno_a2.perfil.pk}/"), 404)
+        self.assertEqual(self._status(self.prof_a, f"/teste/aluno/{self.aluno_b.perfil.pk}/"), 404)
+        self.assertEqual(self._status(self.prof_a, f"/teste/professor/{self.prof_a2.perfil.pk}/"), 404)
+
+    def test_aluno_nao_ve_turma_nem_colega(self):
+        self.assertEqual(self._status(self.aluno_a, f"/teste/turma/{self.turma_a.pk}/"), 404)
+        self.assertEqual(self._status(self.aluno_a, f"/teste/aluno/{self.aluno_a2.perfil.pk}/"), 404)
+
+    def test_equipe_da_plataforma_ve_todas_as_escolas(self):
+        equipe = User.objects.create_user("equipe@plataforma.com", is_staff=True)
+        self.assertEqual(self._status(equipe, f"/teste/turma/{self.turma_b.pk}/"), 200)
+        self.assertEqual(self._status(equipe, f"/teste/aluno/{self.aluno_b.perfil.pk}/"), 200)
+
+    def test_resultados_do_quiz_isolados_e_historico_acompanha_o_aluno(self):
+        from obras.models import Obra
+        from quiz.models import ResultadoQuiz
+
+        obra = Obra.objects.create(titulo="Obra", slug="obra", publicada=True)
+        antigo = ResultadoQuiz.objects.create(
+            perfil=self.aluno_a2.perfil, turma=self.turma_a2, obra=obra, pontuacao=1, total=2, tempo_segundos=10
+        )
+        do_b = ResultadoQuiz.objects.create(
+            perfil=self.aluno_b.perfil, turma=self.turma_b, obra=obra, pontuacao=2, total=2, tempo_segundos=10
+        )
+        self.assertEqual(self._status(self.prof_a, f"/teste/resultado/{antigo.pk}/"), 404)
+        self.assertEqual(self._status(self.prof_a, f"/teste/resultado/{do_b.pk}/"), 404)
+        self.assertEqual(self._status(self.admin_a, f"/teste/resultado/{antigo.pk}/"), 404)
+        # O aluno muda para a turma do prof_a: o histórico vai junto.
+        self.aluno_a2.perfil.turma = self.turma_a
+        self.aluno_a2.perfil.save()
+        self.assertEqual(self._status(self.prof_a, f"/teste/resultado/{antigo.pk}/"), 200)
+        antigo.refresh_from_db()
+        self.assertEqual(antigo.turma, self.turma_a2)  # a turma da época continua registrada
+        self.assertEqual(self._status(self.aluno_a2, f"/teste/resultado/{antigo.pk}/"), 200)
+        self.assertEqual(self._status(self.aluno_a2, f"/teste/resultado/{do_b.pk}/"), 404)
+
+    def test_escola_bloqueada_nao_ve_nada(self):
+        self.escola_a.ativa = False
+        self.escola_a.save()
+        usuario = User.objects.get(pk=self.prof_a.pk)
+        self.assertFalse(turmas_visiveis(usuario).exists())
+        self.assertFalse(alunos_visiveis(usuario).exists())
+        self.assertFalse(resultados_quiz_visiveis(usuario).exists())
+        self.assertFalse(professores_visiveis(User.objects.get(pk=self.admin_a.pk)).exists())
+
+
+class BloqueioPorContratoTests(TestCase):
+    """Bloqueio automático (decisão da cliente de 09/11/2026)."""
+
+    def setUp(self):
+        hoje = timezone.localdate()
+        self.escola = Escola.objects.create(nome="Escola", contrato_fim=hoje)
+        self.prof = criar_conta("prof@escola.com", Perfil.PROFESSOR, self.escola, senha="senha-teste-123")
+
+    def _vencer(self):
+        self.escola.contrato_fim = timezone.localdate() - timedelta(days=1)
+        self.escola.save()
+
+    def _entrar(self):
+        return self.client.post(
+            reverse("contas:login"), {"username": "prof@escola.com", "password": "senha-teste-123"}
+        )
+
+    def test_entra_no_ultimo_dia_do_contrato(self):
+        self.assertEqual(self._entrar().status_code, 302)
+
+    def test_login_recusado_com_contrato_vencido(self):
+        self._vencer()
+        resposta = self._entrar()
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "está suspenso")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_senha_errada_nao_revela_o_bloqueio(self):
+        self._vencer()
+        resposta = self.client.post(reverse("contas:login"), {"username": "prof@escola.com", "password": "errada"})
+        self.assertNotContains(resposta, "está suspenso")
+
+    def test_quem_estava_logado_e_desconectado(self):
+        self.client.force_login(self.prof)
+        self.assertEqual(self.client.get(reverse("obras:home")).status_code, 200)
+        self._vencer()
+        resposta = self.client.get(reverse("obras:home"), follow=True)
+        self.assertRedirects(resposta, reverse("contas:login"))
+        self.assertContains(resposta, MENSAGEM_ESCOLA_BLOQUEADA)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_escola_desativada_bloqueia_na_hora(self):
+        self.escola.ativa = False
+        self.escola.save()
+        self.assertTrue(escola_bloqueada(User.objects.get(pk=self.prof.pk)))
+
+    def test_renovar_o_contrato_libera_de_novo(self):
+        self._vencer()
+        self.escola.contrato_fim = timezone.localdate() + timedelta(days=365)
+        self.escola.save()
+        self.assertEqual(self._entrar().status_code, 302)
+
+    def test_equipe_da_plataforma_nunca_e_bloqueada(self):
+        self._vencer()
+        self.prof.is_staff = True
+        self.prof.save()
+        self.assertEqual(self._entrar().status_code, 302)
+
+    def test_conta_sem_escola_nao_e_afetada(self):
+        self._vencer()
+        criar_conta("avulso@x.com", Perfil.PROFESSOR, senha="senha-teste-123")
+        resposta = self.client.post(reverse("contas:login"), {"username": "avulso@x.com", "password": "senha-teste-123"})
+        self.assertEqual(resposta.status_code, 302)
+
+
+class AdminEscolasTests(DuasEscolasMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.equipe = User.objects.create_user("equipe@plataforma.com", password="senha-teste-123", is_staff=True)
+        self.equipe.groups.add(Group.objects.get(name="Equipe administrativa"))
+        self.client.force_login(self.equipe)
+
+    def test_equipe_administrativa_ve_escolas_e_turmas(self):
+        resposta = self.client.get(reverse("admin:contas_escola_changelist"))
+        self.assertContains(resposta, "Escola A")
+        self.assertContains(resposta, "2 / 3")  # professores ativos / limite
+        resposta = self.client.get(reverse("admin:contas_turma_changelist"), {"escola__id__exact": self.escola_b.pk})
+        self.assertContains(resposta, "3º B")
+        self.assertNotContains(resposta, "3º A")
+
+    def test_filtro_de_escolas_bloqueadas(self):
+        self.escola_b.contrato_fim = timezone.localdate() - timedelta(days=1)
+        self.escola_b.save()
+        resposta = self.client.get(reverse("admin:contas_escola_changelist"), {"situacao": "bloqueada"})
+        self.assertContains(resposta, "Escola B")
+        self.assertNotContains(resposta, "Escola A")
+
+    def test_usuarios_filtrados_por_escola(self):
+        resposta = self.client.get(reverse("admin:auth_user_changelist"), {"perfil__escola__id__exact": self.escola_a.pk})
+        self.assertContains(resposta, "aluno@a.com")
+        self.assertNotContains(resposta, "aluno@b.com")
+
+    def test_cria_aluno_na_turma(self):
+        dados = {**DADOS_NOVO_USUARIO, "email": "novo@a.com", "tipo": Perfil.ALUNO, "turma": self.turma_a.pk}
+        resposta = self.client.post(reverse("admin:auth_user_add"), dados)
+        self.assertEqual(resposta.status_code, 302)
+        perfil = User.objects.get(username="novo@a.com").perfil
+        self.assertEqual((perfil.escola, perfil.turma), (self.escola_a, self.turma_a))
+        self.assertTrue(perfil.user.groups.filter(name=GRUPO_ALUNO).exists())
+
+    def test_nao_cria_professor_alem_do_limite(self):
+        criar_conta("prof3@a.com", Perfil.PROFESSOR, self.escola_a)
+        dados = {**DADOS_NOVO_USUARIO, "escola": self.escola_a.pk}
+        resposta = self.client.post(reverse("admin:auth_user_add"), dados)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Limite do plano atingido")
+        self.assertFalse(User.objects.filter(username="ana@exemplo.com").exists())
+
+    def test_inline_do_perfil_valida_a_turma(self):
+        url = reverse("admin:auth_user_change", args=[self.aluno_a.pk])
+        dados = {
+            "username": "aluno@a.com",
+            "is_active": "on",
+            "date_joined_0": "2026-11-09",
+            "date_joined_1": "10:00:00",
+            "perfil-TOTAL_FORMS": "1",
+            "perfil-INITIAL_FORMS": "1",
+            "perfil-MIN_NUM_FORMS": "0",
+            "perfil-MAX_NUM_FORMS": "1",
+            "perfil-0-id": self.aluno_a.perfil.pk,
+            "perfil-0-user": self.aluno_a.pk,
+            "perfil-0-tipo": Perfil.ALUNO,
+            "perfil-0-escola": self.escola_a.pk,
+            "perfil-0-turma": self.turma_b.pk,
+        }
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Esta turma é de outra escola.")
+
+    def test_registra_consentimento_do_responsavel(self):
+        resposta = self.client.post(reverse("admin:contas_consentimentoresponsavel_add"), {
+            "aluno": self.aluno_a.perfil.pk,
+            "nome_responsavel": "Maria",
+            "parentesco": "mãe",
+            "versao_termo": "2026-11",
+            "meio": ConsentimentoResponsavel.PAPEL,
+            "data_consentimento_0": "2026-11-09",
+            "data_consentimento_1": "10:00:00",
+        })
+        self.assertEqual(resposta.status_code, 302)
+        consentimento = ConsentimentoResponsavel.objects.get()
+        self.assertEqual(consentimento.registrado_por, self.equipe)
+        self.assertEqual(self.aluno_a.perfil.consentimento_valido(), consentimento)
+        consentimento.revogado_em = timezone.now()
+        consentimento.save()
+        self.assertIsNone(self.aluno_a.perfil.consentimento_valido())
+
+    def test_consentimento_so_para_aluno(self):
+        consentimento = ConsentimentoResponsavel(aluno=self.prof_a.perfil, nome_responsavel="X", parentesco="pai")
+        with self.assertRaises(ValidationError):
+            consentimento.full_clean()
+
+    def test_equipe_administrativa_ve_resultados_do_quiz(self):
+        self.assertEqual(self.client.get(reverse("admin:quiz_resultadoquiz_changelist")).status_code, 200)
+
+    def test_telas_do_admin_abrem(self):
+        urls = [
+            reverse("admin:contas_escola_add"),
+            reverse("admin:contas_escola_change", args=[self.escola_a.pk]),
+            reverse("admin:contas_turma_add"),
+            reverse("admin:contas_turma_change", args=[self.turma_a.pk]),
+            reverse("admin:contas_consentimentoresponsavel_add"),
+            reverse("admin:contas_consentimentoresponsavel_changelist"),
+            reverse("admin:auth_user_add"),
+            reverse("admin:auth_user_change", args=[self.aluno_a.pk]),
+            reverse("admin:autocomplete") + "?app_label=contas&model_name=consentimentoresponsavel&field_name=aluno&term=aluno",
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 200)
+        # A busca de aluno do consentimento só traz alunos.
+        ids = {int(item["id"]) for item in self.client.get(urls[-1]).json()["results"]}
+        self.assertIn(self.aluno_a.perfil.pk, ids)
+        self.assertNotIn(self.prof_a.perfil.pk, ids)

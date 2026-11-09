@@ -6,6 +6,10 @@
 
 <form class="form" method="post" novalidate>
     {% csrf_token %}
+    {# Aviso de escola com o acesso suspenso (contas/middleware.py, 09/11/2026). #}
+    {% if messages %}
+        <ul class="errorlist">{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
+    {% endif %}
     {{ form.non_field_errors }}
     {% for field in form %}
         <div class="form__campo">

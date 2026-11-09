@@ -367,3 +367,23 @@ class ResultadoFinalQuizTests(TestCase):
         resposta = self.client.get(self._url("resultado"))
         self.assertContains(resposta, "50%")
         self.assertContains(resposta, "Ver pergunta por pergunta")
+
+
+class ResultadoGuardaTurmaTests(TestCase):
+    """Multiescola (09/11/2026): o resultado registra a turma da época."""
+
+    def test_resultado_grava_a_turma_do_aluno(self):
+        from contas.models import Escola, Turma
+
+        obra = Obra.objects.create(titulo="Lenda", slug="lenda", publicada=True)
+        _, alternativas = criar_pergunta(obra, 1, "Pergunta?")
+        escola = Escola.objects.create(nome="Escola")
+        turma = Turma.objects.create(escola=escola, nome="3º A")
+        aluno = User.objects.create_user("aluno", password="senha-teste-123")
+        aluno.perfil.tipo, aluno.perfil.escola, aluno.perfil.turma = Perfil.ALUNO, escola, turma
+        aluno.perfil.save()
+        self.client.force_login(aluno)
+        self.client.post(reverse("quiz:quiz", args=[obra.slug]))
+        self.client.post(reverse("quiz:pergunta", args=[obra.slug, 1]), {"alternativa": alternativas[0].pk})
+        self.client.get(reverse("quiz:fim", args=[obra.slug]))
+        self.assertEqual(ResultadoQuiz.objects.get().turma, turma)

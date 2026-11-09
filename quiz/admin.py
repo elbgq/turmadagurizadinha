@@ -32,8 +32,10 @@ class RespostaQuizInline(admin.TabularInline):
 
 @admin.register(ResultadoQuiz)
 class ResultadoQuizAdmin(admin.ModelAdmin):
-    list_display = ("perfil", "obra", "pontuacao", "total", "tempo_segundos", "criado_em")
-    list_filter = ("obra",)
+    list_display = ("perfil", "turma", "obra", "pontuacao", "total", "tempo_segundos", "criado_em")
+    # Filtro por escola e turma (multiescola, 09/11/2026).
+    list_filter = ("obra", "perfil__escola", "turma")
+    list_select_related = ("perfil__user", "turma", "obra")
     date_hierarchy = "criado_em"
     readonly_fields = ("criado_em",)
     inlines = (RespostaQuizInline,)

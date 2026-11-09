@@ -3,7 +3,9 @@ from django.contrib.auth.forms import AdminUserCreationForm, AuthenticationForm,
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from .models import Perfil, SolicitacaoAcesso
+from .escopo import escola_bloqueada
+from .middleware import MENSAGEM_ESCOLA_BLOQUEADA
+from .models import Escola, Perfil, SolicitacaoAcesso, Turma
 
 
 class NovoUsuarioAdminForm(AdminUserCreationForm):
@@ -18,6 +20,12 @@ class NovoUsuarioAdminForm(AdminUserCreationForm):
     """
 
     tipo = forms.ChoiceField(label="Tipo", choices=Perfil.TIPO_CHOICES, initial=Perfil.ALUNO)
+    # Multiescola (09/11/2026): em branco = conta direta da plataforma.
+    escola = forms.ModelChoiceField(label="Escola", queryset=Escola.objects.all(), required=False)
+    turma = forms.ModelChoiceField(
+        label="Turma", queryset=Turma.objects.filter(ativa=True), required=False,
+        help_text="Só para aluno. A escola é preenchida pela da turma.",
+    )
 
     class Meta(AdminUserCreationForm.Meta):
         fields = ("first_name", "email")
@@ -44,6 +52,22 @@ class NovoUsuarioAdminForm(AdminUserCreationForm):
         if User.objects.filter(username__iexact=email).exists():
             raise ValidationError("Já existe uma conta cadastrada com este e-mail.")
         return email
+
+    def clean(self):
+        # Mesmas regras do Perfil (turma da mesma escola, limite de
+        # professores da escola e de alunos por turma — Perfil.clean),
+        # checadas antes de criar a conta.
+        dados = super().clean()
+        perfil = Perfil(tipo=dados.get("tipo") or Perfil.OUTRO, escola=dados.get("escola"), turma=dados.get("turma"))
+        try:
+            perfil.clean()
+        except ValidationError as erro:
+            for campo, mensagens in erro.message_dict.items():
+                for mensagem in mensagens:
+                    self.add_error(campo if campo in self.fields else None, mensagem)
+        else:
+            dados["escola"] = perfil.escola
+        return dados
 
     def _post_clean(self):
         # O username precisa estar no User antes da validação de senha do
@@ -96,6 +120,14 @@ class EmailAuthenticationForm(AuthenticationForm):
         digitado = self.cleaned_data["username"].strip()
         contas = list(User.objects.filter(username__iexact=digitado).values_list("username", flat=True)[:2])
         return contas[0] if len(contas) == 1 else digitado
+
+    def confirm_login_allowed(self, user):
+        # Bloqueio automático por contrato (09/11/2026): conta de escola com
+        # o contrato vencido ou desativada não entra. A mensagem só aparece
+        # depois de a senha conferir, então não revela quais e-mails existem.
+        super().confirm_login_allowed(user)
+        if escola_bloqueada(user):
+            raise ValidationError(MENSAGEM_ESCOLA_BLOQUEADA, code="escola_bloqueada")
 
 
 class EmailPasswordResetForm(PasswordResetForm):

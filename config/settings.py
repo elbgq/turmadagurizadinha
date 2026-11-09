@@ -123,6 +123,9 @@ MIDDLEWARE = [
     # O próprio Django Admin já cuida do login dele mesmo, sem precisar de
     # marcação especial (ver contas/urls.py).
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
+    # Multiescola (09/11/2026): desconecta quem é de uma escola com o
+    # contrato vencido ou desativada (bloqueio automático).
+    "contas.middleware.EscolaLiberadaMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
