@@ -15,7 +15,11 @@
     {# buscar o CSS mais recente sempre — evita o problema recorrente de o #}
     {# navegador mostrar uma versão antiga do base.css em cache depois de um #}
     {# ajuste (01/10/2026: aconteceu em pelo menos 2 rodadas de feedback). #}
-    <link rel="stylesheet" href="{% static 'css/base.css' %}?v={% now 'U' %}">
+    {# Desde 07/11/2026 só no desenvolvimento ("debug" só existe com #}
+    {# DEBUG=True, acessando por 127.0.0.1 — INTERNAL_IPS no settings.py): #}
+    {# em produção o WhiteNoise já põe um código da versão no nome do #}
+    {# arquivo, e o navegador guarda o CSS em cache até ele mudar. #}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}{% if debug %}?v={% now 'U' %}{% endif %}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
     {% include "partials/navbar.html" %}

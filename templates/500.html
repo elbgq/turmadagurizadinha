@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+{% load static %}
+{# Erro interno (revisão de 07/11/2026). Não usa o base.html de propósito: #}
+{# o Django monta esta página sem os dados da requisição (usuário, #}
+{# permissões), e ela não pode depender de nada que possa ter causado o erro. #}
+{# O erro em si fica no log do servidor (ver LOGGING em config/settings.py). #}
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algo deu errado — Turma da Gurizadinha</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <main class="container">
+        <h1>Algo deu errado por aqui</h1>
+        <p>Tivemos um problema ao abrir esta página. Tente de novo daqui a pouco; se continuar, avise a equipe da Turma da Gurizadinha.</p>
+        <p><a class="btn" href="/">Voltar para o início</a></p>
+    </main>
+</body>
+</html>

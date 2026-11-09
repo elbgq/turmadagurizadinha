@@ -1,16 +1,18 @@
 import importlib
 import re
 from io import StringIO
+from unittest import mock
 
 from django.apps import apps
 from django.contrib.auth.models import Group, User
 from django.core import mail
 from django.core.cache import cache
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import NoReverseMatch, reverse
 
 from .models import Perfil, SolicitacaoAcesso
+from .views import ip_do_visitante
 
 # O nome do arquivo de migração começa com número, então não dá para usar
 # "from .migrations.0004_... import ...".
@@ -340,3 +342,115 @@ class AnaliseSolicitacaoTests(TestCase):
         self._acao("recusar")
         self._acao("aprovar_e_criar_conta")
         self.assertFalse(User.objects.filter(username="bia@escola.com").exists())
+
+
+# --------------------------------------------------------------------
+# Revisão de 07/11/2026 (antes da publicação)
+# --------------------------------------------------------------------
+
+
+class IpDoVisitanteTests(TestCase):
+    """Atrás do Nginx, o IP real vem do X-Forwarded-For (item 3 da revisão)."""
+
+    def _pedido(self, **meta):
+        return RequestFactory().post("/", REMOTE_ADDR="127.0.0.1", **meta)
+
+    @override_settings(PROXIES_CONFIAVEIS=0)
+    def test_sem_proxy_usa_remote_addr(self):
+        pedido = self._pedido(HTTP_X_FORWARDED_FOR="200.1.1.1")
+        self.assertEqual(ip_do_visitante(pedido), "127.0.0.1")
+
+    @override_settings(PROXIES_CONFIAVEIS=1)
+    def test_com_nginx_usa_o_ip_que_o_nginx_acrescentou(self):
+        # O começo da lista pode ser inventado pelo visitante; vale o último.
+        pedido = self._pedido(HTTP_X_FORWARDED_FOR="1.2.3.4, 200.1.1.1")
+        self.assertEqual(ip_do_visitante(pedido), "200.1.1.1")
+
+    @override_settings(PROXIES_CONFIAVEIS=2)
+    def test_com_cloudflare_e_nginx_usa_o_penultimo(self):
+        pedido = self._pedido(HTTP_X_FORWARDED_FOR="1.2.3.4, 200.1.1.1, 172.68.0.1")
+        self.assertEqual(ip_do_visitante(pedido), "200.1.1.1")
+
+    @override_settings(PROXIES_CONFIAVEIS=1)
+    def test_sem_cabecalho_volta_ao_remote_addr(self):
+        self.assertEqual(ip_do_visitante(self._pedido()), "127.0.0.1")
+
+
+@override_settings(PROXIES_CONFIAVEIS=1)
+class LimitePorIpAtrasDoProxyTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def _pedir(self, ip):
+        return self.client.post(
+            reverse("contas:solicitar_acesso"), DADOS_SOLICITACAO,
+            REMOTE_ADDR="127.0.0.1", HTTP_X_FORWARDED_FOR=ip,
+        )
+
+    def test_limite_e_separado_para_cada_visitante(self):
+        for _ in range(5):
+            self._pedir("200.1.1.1")
+        self.assertContains(self._pedir("200.1.1.1"), "muitos pedidos")
+        # Outra pessoa, também chegando pelo Nginx (127.0.0.1), não é barrada.
+        resposta = self._pedir("200.2.2.2")
+        self.assertRedirects(resposta, reverse("contas:solicitar_acesso_enviado"))
+        self.assertEqual(SolicitacaoAcesso.objects.count(), 6)
+
+
+class LoginSemDiferenciarMaiusculasTests(TestCase):
+    """Item 4 da revisão: "Maria@..." entra na conta "maria@..."."""
+
+    def _entrar(self, login):
+        self.client.post(reverse("contas:login"), {"username": login, "password": "senha-teste-123"})
+        return "_auth_user_id" in self.client.session
+
+    def test_email_com_maiusculas_entra(self):
+        User.objects.create_user("maria@escola.com", password="senha-teste-123")
+        self.assertTrue(self._entrar("Maria@Escola.COM "))
+
+    def test_login_gravado_com_maiusculas_continua_entrando(self):
+        # Ex.: superusuário criado pelo createsuperuser com "Eloi".
+        User.objects.create_user("Eloi", password="senha-teste-123")
+        self.assertTrue(self._entrar("eloi"))
+        self.client.logout()
+        self.assertTrue(self._entrar("Eloi"))
+
+    def test_senha_errada_continua_recusada(self):
+        User.objects.create_user("maria@escola.com", password="senha-teste-123")
+        resposta = self.client.post(reverse("contas:login"), {"username": "MARIA@escola.com", "password": "errada"})
+        self.assertEqual(resposta.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+
+@mock.patch("contas.emails.send_mail", side_effect=OSError("SMTP fora do ar"))
+class FalhaNoEnvioDeEmailTests(TestCase):
+    """Item 5 da revisão: SMTP fora do ar não derruba o Admin (sem erro 500)."""
+
+    def setUp(self):
+        equipe = User.objects.create_user("equipe@exemplo.com", password="senha-teste-123", is_staff=True)
+        equipe.groups.add(Group.objects.get(name="Equipe administrativa"))
+        self.client.force_login(equipe)
+
+    def test_adicionar_usuario_avisa_e_mantem_a_conta(self, _send_mail):
+        dados = {**DADOS_NOVO_USUARIO, "usable_password": "false", "password1": "", "password2": ""}
+        with self.assertLogs("contas.emails", "ERROR"):
+            resposta = self.client.post(reverse("admin:auth_user_add"), dados, follow=True)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertTrue(User.objects.filter(username="ana@exemplo.com").exists())
+        self.assertContains(resposta, "Não foi possível enviar o e-mail")
+
+    def test_aprovar_em_lote_segue_mesmo_com_falha(self, _send_mail):
+        pedidos = [
+            SolicitacaoAcesso.objects.create(nome=n, email=f"{n}@escola.com", escola_turma="EMEF")
+            for n in ("bia", "caio")
+        ]
+        with self.assertLogs("contas.emails", "ERROR"):
+            resposta = self.client.post(
+                reverse("admin:contas_solicitacaoacesso_changelist"),
+                {"action": "aprovar_e_criar_conta", "_selected_action": [p.pk for p in pedidos]},
+                follow=True,
+            )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(SolicitacaoAcesso.objects.filter(status=SolicitacaoAcesso.APROVADA).count(), 2)
+        self.assertTrue(User.objects.filter(username="caio@escola.com").exists())
+        self.assertContains(resposta, "Não foi possível enviar o e-mail")

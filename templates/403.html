@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{# Acesso negado (revisão de 07/11/2026): telas de gestão para quem não #}
+{# tem a permissão (ver @permission_required em obras/views.py e quiz/views.py). #}
+{% block title %}Acesso não permitido{% endblock %}
+
+{% block content %}
+<h1>Acesso não permitido</h1>
+<p>Esta página é só para a equipe da Turma da Gurizadinha. Se você acha que deveria ter acesso, fale com a equipe administrativa.</p>
+<p><a class="btn" href="{% url 'obras:home' %}">Voltar para o início</a></p>
+{% endblock %}

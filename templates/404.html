@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{# Página de "não encontrado" (revisão de 07/11/2026) — com DEBUG=False, #}
+{# o Django usa este template no lugar da página padrão, em inglês. #}
+{% block title %}Página não encontrada{% endblock %}
+
+{% block content %}
+<h1>Bah, essa página não existe!</h1>
+<p>O endereço pode ter sido digitado errado, ou a página saiu do ar.</p>
+<p><a class="btn" href="{% url 'obras:home' %}">Voltar para o início</a></p>
+{% endblock %}

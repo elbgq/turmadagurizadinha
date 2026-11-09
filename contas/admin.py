@@ -12,6 +12,13 @@ from .forms import NovoUsuarioAdminForm
 from .models import Perfil, SolicitacaoAcesso
 
 
+AVISO_EMAIL_FALHOU = (
+    "Não foi possível enviar o e-mail com o link de criar senha para {emails}. "
+    "A conta foi criada; quando o e-mail voltar a funcionar, a pessoa pode usar "
+    "\"Esqueceu a senha?\" na tela de entrar."
+)
+
+
 class PerfilInline(admin.StackedInline):
     model = Perfil
     can_delete = False
@@ -68,7 +75,8 @@ class UsuarioAdmin(UserAdmin):
             obj.perfil.tipo = form.cleaned_data["tipo"]
             obj.perfil.save()
             if not form.cleaned_data.get("set_usable_password", True):
-                enviar_link_criar_senha(request, obj)
+                if not enviar_link_criar_senha(request, obj):
+                    self.message_user(request, AVISO_EMAIL_FALHOU.format(emails=obj.email), messages.WARNING)
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
@@ -148,7 +156,7 @@ class SolicitacaoAcessoAdmin(admin.ModelAdmin):
         if not request.user.has_perm("auth.add_user"):
             self.message_user(request, "Você não tem permissão para criar contas.", messages.ERROR)
             return
-        criadas, ja_existiam = [], []
+        criadas, ja_existiam, sem_email = [], [], []
         for solicitacao in queryset.filter(status=SolicitacaoAcesso.PENDENTE):
             existente = User.objects.filter(username__iexact=solicitacao.email).first()
             if existente:
@@ -163,17 +171,21 @@ class SolicitacaoAcessoAdmin(admin.ModelAdmin):
                 usuario.perfil.tipo = solicitacao.tipo
                 usuario.perfil.save()
                 self._marcar(request, solicitacao, SolicitacaoAcesso.APROVADA, usuario)
-            enviar_link_criar_senha(request, usuario)
-            criadas.append(solicitacao.email)
+            if enviar_link_criar_senha(request, usuario):
+                criadas.append(solicitacao.email)
+            else:
+                sem_email.append(solicitacao.email)
         if criadas:
             self.message_user(request, f"Contas criadas e link de senha enviado: {', '.join(criadas)}.")
+        if sem_email:
+            self.message_user(request, AVISO_EMAIL_FALHOU.format(emails=", ".join(sem_email)), messages.WARNING)
         if ja_existiam:
             self.message_user(
                 request,
                 f"Já havia conta com este e-mail (nada foi alterado): {', '.join(ja_existiam)}.",
                 messages.WARNING,
             )
-        if not criadas and not ja_existiam:
+        if not criadas and not ja_existiam and not sem_email:
             self.message_user(request, "Nenhum pedido pendente selecionado.", messages.WARNING)
 
     @admin.action(description="Recusar", permissions=["change"])

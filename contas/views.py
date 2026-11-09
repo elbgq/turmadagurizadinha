@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.decorators import login_not_required
 from django.core.cache import cache
 from django.shortcuts import redirect, render
@@ -8,6 +9,23 @@ from .forms import SolicitacaoAcessoForm
 # Limite de pedidos por IP (proteção simples contra robôs e abuso).
 LIMITE_SOLICITACOES = 5
 JANELA_SEGUNDOS = 60 * 60
+
+
+def ip_do_visitante(request):
+    """
+    IP de quem fez o pedido. Atrás do Nginx (produção), o REMOTE_ADDR de
+    todo mundo é o do próprio Nginx (127.0.0.1) — o IP real vem no
+    cabeçalho X-Forwarded-For, que cada proxy completa no fim. Só são
+    confiáveis as últimas PROXIES_CONFIAVEIS posições (o começo da lista
+    pode ter sido inventado pelo visitante), por isso o IP é lido de trás
+    para frente. Sem proxy (PROXIES_CONFIAVEIS=0), vale o REMOTE_ADDR.
+    """
+    proxies = settings.PROXIES_CONFIAVEIS
+    if proxies > 0:
+        ips = [ip.strip() for ip in request.META.get("HTTP_X_FORWARDED_FOR", "").split(",") if ip.strip()]
+        if len(ips) >= proxies:
+            return ips[-proxies]
+    return request.META.get("REMOTE_ADDR", "")
 
 
 @login_not_required
@@ -22,7 +40,7 @@ def solicitar_acesso(request):
         return redirect("obras:home")
 
     if request.method == "POST":
-        chave = f"solicitar_acesso:{request.META.get('REMOTE_ADDR', '')}"
+        chave = f"solicitar_acesso:{ip_do_visitante(request)}"
         if cache.get(chave, 0) >= LIMITE_SOLICITACOES:
             return render(request, "contas/solicitar_acesso.html", {"form": SolicitacaoAcessoForm(), "limite": True})
 

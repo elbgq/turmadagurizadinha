@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{# Formulário recusado pela proteção CSRF (revisão de 07/11/2026) — o caso #}
+{# mais comum é a página ter ficado aberta muito tempo, ou o login ter #}
+{# mudado em outra aba. Sem este template, aparece a página do Django em inglês. #}
+{% block title %}Formulário expirado{% endblock %}
+
+{% block content %}
+<h1>O formulário expirou</h1>
+<p>A página ficou aberta por muito tempo ou você entrou/saiu da conta em outra aba. Volte, recarregue a página e tente de novo.</p>
+<p><a class="btn" href="{% url 'obras:home' %}">Voltar para o início</a></p>
+{% endblock %}

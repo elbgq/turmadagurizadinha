@@ -5,6 +5,8 @@ Django só mostra os e-mails no terminal (ver EMAIL_BACKEND em
 config/settings.py) — nada chega a ninguém.
 """
 
+import logging
+
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -13,6 +15,8 @@ from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+
+logger = logging.getLogger(__name__)
 
 
 def _assunto(template, contexto):
@@ -44,12 +48,20 @@ def enviar_link_criar_senha(request, usuario):
         ),
         "login": request.build_absolute_uri(reverse("contas:login")),
     }
-    send_mail(
-        _assunto("contas/email/acesso_aprovado_assunto.txt", contexto),
-        render_to_string("contas/email/acesso_aprovado.txt", contexto),
-        None,
-        [usuario.email],
-    )
+    # Falha no servidor de e-mail não pode derrubar a tela do Admin (a
+    # conta já foi criada): devolve False, o Admin avisa a equipe, e o
+    # erro fica no log (revisão de 07/11/2026).
+    try:
+        send_mail(
+            _assunto("contas/email/acesso_aprovado_assunto.txt", contexto),
+            render_to_string("contas/email/acesso_aprovado.txt", contexto),
+            None,
+            [usuario.email],
+        )
+    except Exception:
+        logger.exception("Falha ao enviar o link de criar senha para %s", usuario.email)
+        return False
+    return True
 
 
 def avisar_equipe_nova_solicitacao(request, solicitacao):

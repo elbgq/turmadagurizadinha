@@ -87,6 +87,16 @@ class EmailAuthenticationForm(AuthenticationForm):
 
     username = forms.CharField(label="E-mail", widget=forms.EmailInput(attrs={"autofocus": True}))
 
+    def clean_username(self):
+        # Maiúsculas e minúsculas não fazem diferença no e-mail (revisão de
+        # 07/11/2026): sem isto, "Maria@..." não entraria na conta
+        # "maria@...", porque o banco compara o login letra por letra. Usa
+        # o login como está gravado; se não achar (ou achar mais de um),
+        # segue com o que foi digitado e o Django recusa normalmente.
+        digitado = self.cleaned_data["username"].strip()
+        contas = list(User.objects.filter(username__iexact=digitado).values_list("username", flat=True)[:2])
+        return contas[0] if len(contas) == 1 else digitado
+
 
 class EmailPasswordResetForm(PasswordResetForm):
     """Mesma lógica do PasswordResetForm padrão, só troca o rótulo do campo para "E-mail"."""

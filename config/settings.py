@@ -28,8 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Pasta dos dados que precisam sobreviver a cada deploy (uploads em media/ e,
 # se não houver DATABASE_URL, o db.sqlite3). Na sua máquina continua sendo a
-# pasta do projeto; no Railway é o volume montado (ex.: /data), lido
-# automaticamente de RAILWAY_VOLUME_MOUNT_PATH. DJANGO_DATA_DIR tem prioridade.
+# pasta do projeto; em produção, o disco persistente da hospedagem (ex.:
+# /data), informado em DJANGO_DATA_DIR. RAILWAY_VOLUME_MOUNT_PATH é lido só
+# como alternativa, para hospedagens que já informam o disco nessa variável.
 DATA_DIR = Path(
     os.environ.get("DJANGO_DATA_DIR")
     or os.environ.get("RAILWAY_VOLUME_MOUNT_PATH")
@@ -41,7 +42,10 @@ DATA_DIR = Path(
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
+# Desligado por padrão (revisão de 07/11/2026): se a variável faltar no
+# servidor, o site sobe seguro, sem mostrar código e configurações nas
+# telas de erro. Na sua máquina, o .env traz DJANGO_DEBUG=True.
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Defina DJANGO_SECRET_KEY no seu .env local (copie de .env.example) — nunca
@@ -76,8 +80,8 @@ CSRF_TRUSTED_ORIGINS = [
     if o.strip()
 ]
 
-# O Railway informa o domínio gerado (xxx.up.railway.app) nesta variável;
-# ele entra sozinho na lista, sem precisar repetir nas variáveis do serviço.
+# Se a hospedagem informar o domínio público gerado nesta variável, ele entra
+# sozinho na lista; sem ela, nada muda (use DJANGO_ALLOWED_HOSTS acima).
 RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if RAILWAY_PUBLIC_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
@@ -145,7 +149,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 #
-# Com DATABASE_URL definida (produção: PostgreSQL do Railway, ex.:
+# Com DATABASE_URL definida (produção: PostgreSQL, ex.:
 # postgresql://usuario:senha@host:5432/banco), usa esse banco. Sem ela (sua
 # máquina, .env sem DATABASE_URL), continua no SQLite de sempre.
 DATABASES = {
@@ -193,7 +197,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-# Destino do `collectstatic` (rodado no build do Railway, ver railway.json);
+# Destino do `collectstatic` (rodado no build/deploy da hospedagem);
 # fora do Git (ver .gitignore).
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -213,7 +217,7 @@ STORAGES = {
 
 # Upload de ilustrações e demais arquivos de mídia (Fase 4)
 # https://docs.djangoproject.com/en/5.1/topics/files/
-# Fica em DATA_DIR para não se perder a cada deploy (volume no Railway).
+# Fica em DATA_DIR para não se perder a cada deploy (disco persistente).
 MEDIA_URL = "media/"
 MEDIA_ROOT = DATA_DIR / "media"
 
@@ -255,11 +259,85 @@ DEFAULT_FROM_EMAIL = os.environ.get(
 EMAIL_EQUIPE_ADMINISTRATIVA = os.environ.get("EMAIL_EQUIPE_ADMINISTRATIVA", "")
 
 
+# Endereços tratados como "a sua máquina" no desenvolvimento: com
+# DEBUG=True, os templates ganham a variável "debug" (usada no base.html
+# para o navegador sempre buscar o CSS novo). Não vale em produção.
+INTERNAL_IPS = ["127.0.0.1"]
+
+
+# Quem recebe por e-mail o aviso de cada erro 500 em produção (DEBUG=False),
+# com o detalhe do erro — separados por vírgula. Vazio = sem e-mail; o erro
+# continua registrado no log (ver LOGGING abaixo). Depende do SMTP.
+ADMINS = [
+    (e.strip(), e.strip())
+    for e in os.environ.get("DJANGO_ADMINS", "").split(",")
+    if e.strip()
+]
+# Remetente desses avisos de erro (o padrão do Django, root@localhost,
+# costuma ser recusado pelo servidor SMTP).
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+
+# Registro de erros (revisão de 07/11/2026). Sem isto, com DEBUG=False o
+# Django não grava os erros 500 em lugar nenhum. Tudo vai para a saída do
+# processo (terminal na sua máquina; no servidor, o log do Gunicorn/systemd
+# — `journalctl -u <serviço>`), e os erros 500 também por e-mail a ADMINS.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simples": {"format": "{asctime} {levelname} {name}: {message}", "style": "{"},
+    },
+    "filters": {
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "simples"},
+        "mail_admins": {
+            "class": "django.utils.log.AdminEmailHandler",
+            "level": "ERROR",
+            "filters": ["require_debug_false"],
+        },
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": os.environ.get("DJANGO_LOG_LEVEL", "WARNING"),
+            "propagate": False,
+        },
+        # Só os erros 500: página não encontrada (404) e acesso negado (403)
+        # são do dia a dia (robôs, links velhos) e já aparecem no log de
+        # acessos do Nginx.
+        "django.request": {"level": "ERROR"},
+    },
+}
+
+
+# Cache compartilhado entre os processos do Gunicorn (revisão de
+# 07/11/2026) — usado pelo limite de pedidos do "Solicitar acesso" (ver
+# contas/views.py). O cache padrão do Django fica na memória de cada
+# processo, e cada um contaria os pedidos separado. Em arquivos, na pasta
+# de dados, não precisa de nenhum comando extra nem de outro serviço.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": DATA_DIR / "cache",
+    }
+}
+
+# Quantos proxies confiáveis ficam na frente do Django (Nginx = 1; Nginx
+# atrás da Cloudflare = 2). Serve para achar o IP real do visitante no
+# cabeçalho X-Forwarded-For (ver contas/views.py) — atrás do Nginx, o
+# REMOTE_ADDR de todo mundo é 127.0.0.1. 0 = sem proxy (sua máquina).
+PROXIES_CONFIAVEIS = int(os.environ.get("DJANGO_PROXIES_CONFIAVEIS", "0"))
+
+
 # Segurança em produção (Fase 10) — só com DEBUG=False, para não atrapalhar o
 # `runserver` local (que não tem HTTPS).
 if not DEBUG:
-    # O Railway (e o Cloudflare na frente dele) entrega o HTTPS e repassa a
-    # requisição ao Django por HTTP, avisando neste cabeçalho.
+    # A hospedagem (ou o proxy/CDN na frente dela) entrega o HTTPS e repassa
+    # a requisição ao Django por HTTP, avisando neste cabeçalho.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True

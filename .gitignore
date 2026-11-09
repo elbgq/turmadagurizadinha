@@ -17,6 +17,8 @@ db.sqlite3-shm
 media/*
 !media/.gitkeep
 staticfiles/
+# Cache em arquivos (limite do "Solicitar acesso" — ver CACHES no settings.py)
+cache/
 
 # Variáveis de ambiente / segredos
 .env
@@ -34,6 +36,7 @@ desktop.ini
 
 Claude outputs/*
 claude-setup/*
+docs/*
 
 # Vídeos de protótipo (não versionados)
 static/video/
