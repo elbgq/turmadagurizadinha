@@ -8,6 +8,6 @@
 <form class="form" method="post" novalidate>
     {% include "escola/_form_campos.html" %}
     <button type="submit" class="btn">Salvar</button>
-    <a href="{% if turma %}{% url 'escola:turma' turma.pk %}{% else %}{% url 'escola:turmas' %}{% endif %}">Cancelar</a>
+    <a href="{% url 'escola:turmas' %}">Cancelar</a>
 </form>
 {% endblock %}

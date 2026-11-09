@@ -6,8 +6,7 @@
 <h1>{{ turma.nome }} <small>({{ turma.ano_letivo }})</small></h1>
 {% include "escola/_mensagens.html" %}
 
-<p>{{ ativos }} de {{ limite }} alunos ativos.{% if not turma.ativa %} Turma encerrada.{% endif %}
-    <a href="{% url 'escola:turma_editar' turma.pk %}">Editar turma</a></p>
+<p>{{ ativos }} de {{ limite }} alunos ativos.{% if not turma.ativa %} Turma encerrada.{% endif %}</p>
 
 <p class="escola-acoes">
     {% if ativos < limite %}

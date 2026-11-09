@@ -6,28 +6,30 @@
 <h1>{% if eh_professor %}Minhas turmas{% else %}Turmas da escola{% endif %}</h1>
 {% include "escola/_mensagens.html" %}
 
-{% if eh_professor %}
+{% if pode_editar %}
+    <p>Crie as turmas e designe o professor(a) de cada uma. Ele(a) cadastra os alunos e imprime os cartões de acesso. Cada turma tem até {{ limite }} alunos.</p>
     <p><a class="btn" href="{% url 'escola:turma_nova' %}">+ Nova turma</a></p>
-{% else %}
-    <p>As turmas são criadas pelos professores. Cada turma tem até {{ limite }} alunos.</p>
+{% elif eh_professor %}
+    <p>Aqui aparecem as turmas em que você foi designado(a). As turmas são criadas pela administração da escola.</p>
 {% endif %}
 
 <div class="escola-tabela">
 <table class="tabela-gestao">
     <thead>
-        <tr><th>Turma</th><th>Ano letivo</th>{% if not eh_professor %}<th>Professor(a)</th>{% endif %}<th>Alunos</th><th>Situação</th></tr>
+        <tr><th>Turma</th><th>Ano letivo</th>{% if not eh_professor %}<th>Professor(a)</th>{% endif %}<th>Alunos</th><th>Situação</th>{% if pode_editar %}<th>Ações</th>{% endif %}</tr>
     </thead>
     <tbody>
         {% for turma in turmas %}
             <tr>
                 <td>{% if eh_professor %}<a href="{% url 'escola:turma' turma.pk %}">{{ turma.nome }}</a>{% else %}{{ turma.nome }}{% endif %}</td>
                 <td>{{ turma.ano_letivo }}</td>
-                {% if not eh_professor %}<td>{{ turma.professor.user.first_name|default:"—" }}</td>{% endif %}
+                {% if not eh_professor %}<td>{% if turma.professor %}{{ turma.professor.user.first_name }}{% else %}<em>sem professor(a)</em>{% endif %}</td>{% endif %}
                 <td>{{ turma.alunos_ativos.count }} / {{ limite }}</td>
                 <td>{% if turma.ativa %}Ativa{% else %}Encerrada{% endif %}</td>
+                {% if pode_editar %}<td><a href="{% url 'escola:turma_editar' turma.pk %}">Editar</a></td>{% endif %}
             </tr>
         {% empty %}
-            <tr><td colspan="5">Nenhuma turma ainda.</td></tr>
+            <tr><td colspan="6">Nenhuma turma ainda.</td></tr>
         {% endfor %}
     </tbody>
 </table>

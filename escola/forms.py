@@ -44,15 +44,31 @@ class ProfessorForm(forms.Form):
 
 
 class TurmaForm(forms.ModelForm):
+    """
+    Turma criada e editada pelo Admin da escola, que designa o professor
+    responsável (revisão de 09/11/2026). Na lista de professores entram só
+    os ativos da própria escola — e o atual, se a turma já tiver um que
+    tenha sido desativado, para o formulário não trocar sem querer.
+    """
+
     class Meta:
         model = Turma
-        fields = ["nome", "ano_letivo", "ativa"]
+        fields = ["nome", "ano_letivo", "professor", "ativa"]
 
     def __init__(self, *args, escola, **kwargs):
         self.escola = escola
         super().__init__(*args, **kwargs)
         if self.instance.pk is None:
             del self.fields["ativa"]
+            self.instance.escola = escola  # para o Turma.clean conferir a escola do professor
+        professores = Perfil.objects.filter(tipo=Perfil.PROFESSOR, escola=escola, user__is_active=True)
+        if self.instance.professor_id:
+            professores = professores | Perfil.objects.filter(pk=self.instance.professor_id)
+        campo = self.fields["professor"]
+        campo.queryset = professores.select_related("user").order_by("user__first_name")
+        campo.label_from_instance = lambda perfil: perfil.user.first_name or perfil.user.email
+        campo.empty_label = "— ainda sem professor(a) —"
+        campo.help_text = "Só quem for designado(a) vê a turma e cadastra os alunos dela."
 
     def clean(self):
         dados = super().clean()

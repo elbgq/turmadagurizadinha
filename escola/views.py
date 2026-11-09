@@ -3,10 +3,12 @@
 fora do Django Admin (que fica só para a equipe da plataforma).
 
 - Admin da escola: cadastra, edita, desativa e reativa os professores da
-  escola, dentro do limite do plano; vê as turmas (sem os alunos).
-- Professor: cria as suas turmas, cadastra os alunos (um a um ou em lote),
-  gera login e senha simples, imprime os cartões de acesso, gera senha
-  nova, move ou desativa aluno e registra o consentimento do responsável.
+  escola, dentro do limite do plano; cria e edita as turmas e designa o
+  professor de cada uma (revisão de 09/11/2026); não vê os alunos.
+- Professor: vê só as turmas em que foi designado, cadastra os alunos (um
+  a um ou em lote), gera login e senha simples, imprime os cartões de
+  acesso, gera senha nova, move ou desativa aluno e registra o
+  consentimento do responsável.
 
 Todo registro é buscado pelo escopo da conta logada (contas/escopo.py):
 id de outra escola, ou de turma de outro professor, dá 404. Sem a
@@ -152,7 +154,8 @@ def professor_ativo(request, pk):
 
 
 # --------------------------------------------------------------------
-# Turmas (lista para os dois papéis; o resto só para o professor)
+# Turmas: lista para os dois papéis; criar/editar e designar o professor
+# só o Admin da escola (revisão de 09/11/2026); o resto só o professor.
 # --------------------------------------------------------------------
 
 
@@ -163,6 +166,7 @@ def turmas(request):
         "escola": _escola(request),
         "turmas": lista,
         "eh_professor": request.user.perfil.tipo == Perfil.PROFESSOR,
+        "pode_editar": request.user.has_perm("contas.change_turma"),
         "limite": LIMITE_ALUNOS_POR_TURMA,
     })
 
@@ -172,22 +176,25 @@ def turma_nova(request):
     escola = _escola(request)
     form = TurmaForm(request.POST or None, escola=escola)
     if request.method == "POST" and form.is_valid():
-        turma = form.save(commit=False)
-        turma.escola, turma.professor = escola, request.user.perfil
-        turma.save()
-        messages.success(request, f"Turma {turma.nome} criada. Agora cadastre os alunos.")
-        return redirect("escola:turma", pk=turma.pk)
+        turma = form.save()
+        if turma.professor_id:
+            messages.success(
+                request, f"Turma {turma.nome} criada. {turma.professor.user.first_name} já pode cadastrar os alunos."
+            )
+        else:
+            messages.success(request, f"Turma {turma.nome} criada. Falta designar o professor(a).")
+        return redirect("escola:turmas")
     return render(request, "escola/turma_form.html", {"form": form})
 
 
 @area_da_escola("contas.change_turma")
 def turma_editar(request, pk):
-    turma = do_escopo_ou_404("turmas", request.user, pk=pk, professor=request.user.perfil)
+    turma = do_escopo_ou_404("turmas", request.user, pk=pk)
     form = TurmaForm(request.POST or None, instance=turma, escola=turma.escola)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Turma salva.")
-        return redirect("escola:turma", pk=turma.pk)
+        return redirect("escola:turmas")
     return render(request, "escola/turma_form.html", {"form": form, "turma": turma})
 
 

@@ -82,7 +82,11 @@ class AcessoAAreaDaEscolaTests(EscolasMixin, TestCase):
     def test_admin_da_escola_nao_mexe_em_alunos(self):
         self.assertEqual(self._status(self.admin_a, "turma", self.turma_a.pk), 403)
         self.assertEqual(self._status(self.admin_a, "aluno_editar", self.aluno_a.perfil.pk), 403)
-        self.assertEqual(self._status(self.admin_a, "turma_nova"), 403)
+        self.assertEqual(self._status(self.admin_a, "cartoes", self.turma_a.pk), 403)
+
+    def test_professor_nao_cria_nem_edita_turma(self):
+        self.assertEqual(self._status(self.prof_a, "turma_nova"), 403)
+        self.assertEqual(self._status(self.prof_a, "turma_editar", self.turma_a.pk), 403)
 
     def test_isolamento_entre_escolas_da_404(self):
         self.assertEqual(self._status(self.admin_a, "professor_editar", self.prof_b.perfil.pk), 404)
@@ -95,7 +99,6 @@ class AcessoAAreaDaEscolaTests(EscolasMixin, TestCase):
 
     def test_professor_nao_ve_turma_nem_aluno_do_colega(self):
         self.assertEqual(self._status(self.prof_a, "turma", self.turma_a2.pk), 404)
-        self.assertEqual(self._status(self.prof_a, "turma_editar", self.turma_a2.pk), 404)
         self.assertEqual(self._status(self.prof_a, "aluno_ativo", self.aluno_a2.perfil.pk, metodo="post"), 404)
         self.assertEqual(self._status(self.prof_a, "aluno_consentimento", self.aluno_a2.perfil.pk), 404)
 
@@ -172,7 +175,7 @@ class ProfessoresDoAdminDaEscolaTests(EscolasMixin, TestCase):
         self.assertContains(resposta, "3º ano A")
         self.assertContains(resposta, "4º ano A")
         self.assertNotContains(resposta, "3º ano B")
-        self.assertNotContains(resposta, reverse("escola:turma", args=[self.turma_a.pk]))
+        self.assertNotContains(resposta, 'href="%s"' % reverse("escola:turma", args=[self.turma_a.pk]))
 
 
 class TurmasDoProfessorTests(EscolasMixin, TestCase):
@@ -185,11 +188,64 @@ class TurmasDoProfessorTests(EscolasMixin, TestCase):
         self.assertContains(resposta, "3º ano A")
         self.assertNotContains(resposta, "4º ano A")
 
-    def test_cria_turma_na_propria_escola(self):
-        resposta = self.client.post(reverse("escola:turma_nova"), {"nome": "5º ano C", "ano_letivo": 2027})
+    def test_lista_avisa_que_a_turma_vem_da_escola(self):
+        resposta = self.client.get(reverse("escola:turmas"))
+        self.assertContains(resposta, "criadas pela administração da escola")
+        self.assertNotContains(resposta, reverse("escola:turma_nova"))
+
+
+class TurmasDoAdminDaEscolaTests(EscolasMixin, TestCase):
+    """Revisão de 09/11/2026: o Admin da escola cria as turmas e designa o professor."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin_a)
+
+    def test_lista_todas_as_turmas_da_escola_com_editar(self):
+        resposta = self.client.get(reverse("escola:turmas"))
+        self.assertContains(resposta, "3º ano A")
+        self.assertContains(resposta, "4º ano A")
+        self.assertNotContains(resposta, "3º ano B")
+        self.assertContains(resposta, reverse("escola:turma_nova"))
+        self.assertContains(resposta, reverse("escola:turma_editar", args=[self.turma_a.pk]))
+
+    def test_cria_turma_e_designa_professor(self):
+        resposta = self.client.post(
+            reverse("escola:turma_nova"), {"nome": "5º ano C", "ano_letivo": 2027, "professor": self.prof_a2.perfil.pk}
+        )
+        self.assertRedirects(resposta, reverse("escola:turmas"))
         turma = Turma.objects.get(nome="5º ano C")
-        self.assertRedirects(resposta, reverse("escola:turma", args=[turma.pk]))
-        self.assertEqual((turma.escola, turma.professor), (self.escola_a, self.prof_a.perfil))
+        self.assertEqual((turma.escola, turma.professor), (self.escola_a, self.prof_a2.perfil))
+        # O professor designado passa a ver a turma; o colega, não.
+        self.client.force_login(self.prof_a2)
+        self.assertEqual(self.client.get(reverse("escola:turma", args=[turma.pk])).status_code, 200)
+        self.client.force_login(self.prof_a)
+        self.assertEqual(self.client.get(reverse("escola:turma", args=[turma.pk])).status_code, 404)
+
+    def test_cria_turma_sem_professor(self):
+        self.client.post(reverse("escola:turma_nova"), {"nome": "5º ano C", "ano_letivo": 2027})
+        self.assertIsNone(Turma.objects.get(nome="5º ano C").professor)
+        self.assertContains(self.client.get(reverse("escola:turmas")), "sem professor(a)")
+
+    def test_so_professores_ativos_da_escola_aparecem(self):
+        self.prof_a2.is_active = False
+        self.prof_a2.save()
+        campo = self.client.get(reverse("escola:turma_nova")).context["form"].fields["professor"]
+        self.assertEqual(list(campo.queryset), [self.prof_a.perfil])
+        resposta = self.client.post(
+            reverse("escola:turma_nova"), {"nome": "5º ano C", "ano_letivo": 2027, "professor": self.prof_b.perfil.pk}
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertFalse(Turma.objects.filter(nome="5º ano C").exists())
+
+    def test_troca_o_professor_da_turma(self):
+        url = reverse("escola:turma_editar", args=[self.turma_a.pk])
+        self.client.post(url, {
+            "nome": "3º ano A", "ano_letivo": self.turma_a.ano_letivo, "professor": self.prof_a2.perfil.pk, "ativa": "on",
+        })
+        self.turma_a.refresh_from_db()
+        self.assertEqual(self.turma_a.professor, self.prof_a2.perfil)
+        self.assertEqual(self.turma_a.alunos_ativos().count(), 1)  # os alunos ficam na turma
 
     def test_turma_repetida_no_mesmo_ano_e_recusada(self):
         resposta = self.client.post(
@@ -199,9 +255,18 @@ class TurmasDoProfessorTests(EscolasMixin, TestCase):
 
     def test_encerra_turma(self):
         url = reverse("escola:turma_editar", args=[self.turma_a.pk])
-        self.client.post(url, {"nome": "3º ano A", "ano_letivo": self.turma_a.ano_letivo})
+        self.client.post(url, {"nome": "3º ano A", "ano_letivo": self.turma_a.ano_letivo, "professor": self.prof_a.perfil.pk})
         self.turma_a.refresh_from_db()
         self.assertFalse(self.turma_a.ativa)
+        self.assertEqual(self.turma_a.professor, self.prof_a.perfil)
+
+    def test_turma_de_outra_escola_da_404(self):
+        self.assertEqual(self.client.get(reverse("escola:turma_editar", args=[self.turma_b.pk])).status_code, 404)
+
+    def test_telas_abrem(self):
+        for nome, args in [("turmas", []), ("turma_nova", []), ("turma_editar", [self.turma_a.pk])]:
+            with self.subTest(nome):
+                self.assertEqual(self.client.get(reverse(f"escola:{nome}", args=args)).status_code, 200)
 
 
 class AlunosDoProfessorTests(EscolasMixin, TestCase):
@@ -313,7 +378,7 @@ class AlunosDoProfessorTests(EscolasMixin, TestCase):
 
     def test_telas_abrem(self):
         for nome, args in [
-            ("turmas", []), ("turma_nova", []), ("turma", [self.turma_a.pk]), ("turma_editar", [self.turma_a.pk]),
+            ("turmas", []), ("turma", [self.turma_a.pk]),
             ("aluno_novo", [self.turma_a.pk]), ("alunos_lote", [self.turma_a.pk]), ("cartoes", [self.turma_a.pk]),
             ("aluno_editar", [self.aluno_a.perfil.pk]),
         ]:
