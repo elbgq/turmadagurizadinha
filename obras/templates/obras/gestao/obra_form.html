@@ -32,90 +32,116 @@
         {{ form.publicada.errors }}
     </div>
 
-    {% for field in form %}
-        {% if field.name == "slug" %}
-            {{ field }}
-        {% elif field.name == "publicada" %}
-            {# já mostrado em destaque no topo #}
-        {% else %}
-            <div class="form__campo">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                {{ field.errors }}
-            </div>
-        {% endif %}
-    {% endfor %}
+    {{ form.slug }}
 
-    {% if formset %}
-        <h2>Atividades de apoio (perguntas)</h2>
-        <p>Cadastre o enunciado de cada pergunta aqui. As alternativas de cada uma são gerenciadas separadamente, depois de salvar.</p>
-        {{ formset.management_form }}
-        {% for questao_form in formset %}
-            <fieldset class="form__questao">
-                {{ questao_form.id }}
-                {{ questao_form.non_field_errors }}
-                {% if not questao_form.instance.pk %}
-                    <p class="form__novo-enunciado">Novo enunciado</p>
-                {% endif %}
-                <div class="form__campo">
-                    <div class="form__campo-cabecalho">
-                        <label for="{{ questao_form.enunciado.id_for_label }}">Enunciado</label>
-                        {% if questao_form.instance.pk %}
-                            <span class="form__ordem-valor">Ordem: {{ questao_form.instance.ordem }}</span>
-                        {% endif %}
+    {# Cada grupo de campos num quadro delimitado, com o título na moldura #}
+    {# (pedido do Eloi em 10/11/2026 — antes os campos vinham numa lista #}
+    {# só e o PDF da atividade ficava antes do título "Atividades de apoio"). #}
+    {# Os campos são chamados pelo nome: ao criar um campo novo no ObraForm, #}
+    {# incluir aqui também (o teste FormularioObraEmQuadrosTests avisa). #}
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Identificação</legend>
+        {% include "obras/gestao/_campo_obra.html" with field=form.titulo %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.categoria %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.ilustrador %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.ordem %}
+    </fieldset>
+
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Imagens</legend>
+        {% include "obras/gestao/_campo_obra.html" with field=form.capa %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.imagem_pagina %}
+    </fieldset>
+
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Textos</legend>
+        {% include "obras/gestao/_campo_obra.html" with field=form.texto_breve %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.texto_completo %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.topicos_resumo %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.resumo_pdf %}
+    </fieldset>
+
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Atividades de apoio</legend>
+        {% include "obras/gestao/_campo_obra.html" with field=form.atividade_pdf %}
+
+        <h3 class="form__secao-subtitulo">Perguntas</h3>
+        {% if formset %}
+            <p class="form__secao-ajuda">Cadastre o enunciado de cada pergunta aqui. As alternativas de cada uma são gerenciadas separadamente, depois de salvar.</p>
+            {{ formset.management_form }}
+            {% for questao_form in formset %}
+                <fieldset class="form__questao">
+                    {{ questao_form.id }}
+                    {{ questao_form.non_field_errors }}
+                    {% if not questao_form.instance.pk %}
+                        <p class="form__novo-enunciado">Novo enunciado</p>
+                    {% endif %}
+                    <div class="form__campo">
+                        <div class="form__campo-cabecalho">
+                            <label for="{{ questao_form.enunciado.id_for_label }}">Enunciado</label>
+                            {% if questao_form.instance.pk %}
+                                <span class="form__ordem-valor">Ordem: {{ questao_form.instance.ordem }}</span>
+                            {% endif %}
+                        </div>
+                        {{ questao_form.enunciado }}
                     </div>
-                    {{ questao_form.enunciado }}
-                </div>
-                <div class="form__campo">
-                    <label for="{{ questao_form.ordem.id_for_label }}">Ordem</label>
-                    {{ questao_form.ordem }}
-                </div>
-                {% if questao_form.instance.pk %}
-                    <p><a href="{% url 'obras:questao_alternativas' questao_form.instance.pk %}">Gerenciar alternativas ({{ questao_form.instance.alternativas.count }})</a></p>
-                {% else %}
-                    <p><small>Salve a obra para poder cadastrar as alternativas desta pergunta.</small></p>
-                {% endif %}
-                {% if questao_form.DELETE %}
-                    <label class="form__excluir">{{ questao_form.DELETE }} Excluir esta pergunta</label>
-                {% endif %}
-            </fieldset>
-        {% endfor %}
-    {% endif %}
+                    <div class="form__campo">
+                        <label for="{{ questao_form.ordem.id_for_label }}">Ordem</label>
+                        {{ questao_form.ordem }}
+                    </div>
+                    {% if questao_form.instance.pk %}
+                        <p><a href="{% url 'obras:questao_alternativas' questao_form.instance.pk %}">Gerenciar alternativas ({{ questao_form.instance.alternativas.count }})</a></p>
+                    {% else %}
+                        <p><small>Salve a obra para poder cadastrar as alternativas desta pergunta.</small></p>
+                    {% endif %}
+                    {% if questao_form.DELETE %}
+                        <label class="form__excluir">{{ questao_form.DELETE }} Excluir esta pergunta</label>
+                    {% endif %}
+                </fieldset>
+            {% endfor %}
+        {% else %}
+            <p class="form__secao-ajuda">Salve a obra para poder cadastrar as perguntas.</p>
+        {% endif %}
+    </fieldset>
 
     {% if obra and perms.quiz.change_perguntaquiz %}
-        <h2>Quiz interativo</h2>
-        <p><a class="btn btn--ciano btn--pequeno" href="{% url 'quiz:perguntas_editar' obra.pk %}">Perguntas do quiz ({{ obra.perguntas_quiz.count }})</a></p>
+        <fieldset class="form__secao">
+            <legend class="form__secao-titulo">Quiz interativo</legend>
+            <p class="form__secao-ajuda">As perguntas do quiz têm tela própria.</p>
+            <p class="form__secao-ajuda"><a class="btn btn--ciano btn--pequeno" href="{% url 'quiz:perguntas_editar' obra.pk %}">Perguntas do quiz ({{ obra.perguntas_quiz.count }})</a></p>
+        </fieldset>
     {% endif %}
 
     {% if glossario_formset %}
-        <h2>Glossário Gauchês</h2>
-        <p>Termos do vocabulário regional usados no texto, com sua definição — aparecem em destaque na página da obra, fora do texto principal.</p>
-        {{ glossario_formset.management_form }}
-        {% for termo_form in glossario_formset %}
-            <fieldset class="form__questao">
-                {{ termo_form.id }}
-                {{ termo_form.non_field_errors }}
-                {% if not termo_form.instance.pk %}
-                    <p class="form__novo-enunciado">Novo termo</p>
-                {% endif %}
-                <div class="form__campo">
-                    <label for="{{ termo_form.termo.id_for_label }}">Termo</label>
-                    {{ termo_form.termo }}
-                </div>
-                <div class="form__campo">
-                    <label for="{{ termo_form.definicao.id_for_label }}">Definição</label>
-                    {{ termo_form.definicao }}
-                </div>
-                <div class="form__campo">
-                    <label for="{{ termo_form.ordem.id_for_label }}">Ordem</label>
-                    {{ termo_form.ordem }}
-                </div>
-                {% if termo_form.DELETE %}
-                    <label class="form__excluir">{{ termo_form.DELETE }} Excluir este termo</label>
-                {% endif %}
-            </fieldset>
-        {% endfor %}
+        <fieldset class="form__secao">
+            <legend class="form__secao-titulo">Glossário Gauchês</legend>
+            <p class="form__secao-ajuda">Termos do vocabulário regional usados no texto, com sua definição — aparecem em destaque na página da obra, fora do texto principal.</p>
+            {{ glossario_formset.management_form }}
+            {% for termo_form in glossario_formset %}
+                <fieldset class="form__questao">
+                    {{ termo_form.id }}
+                    {{ termo_form.non_field_errors }}
+                    {% if not termo_form.instance.pk %}
+                        <p class="form__novo-enunciado">Novo termo</p>
+                    {% endif %}
+                    <div class="form__campo">
+                        <label for="{{ termo_form.termo.id_for_label }}">Termo</label>
+                        {{ termo_form.termo }}
+                    </div>
+                    <div class="form__campo">
+                        <label for="{{ termo_form.definicao.id_for_label }}">Definição</label>
+                        {{ termo_form.definicao }}
+                    </div>
+                    <div class="form__campo">
+                        <label for="{{ termo_form.ordem.id_for_label }}">Ordem</label>
+                        {{ termo_form.ordem }}
+                    </div>
+                    {% if termo_form.DELETE %}
+                        <label class="form__excluir">{{ termo_form.DELETE }} Excluir este termo</label>
+                    {% endif %}
+                </fieldset>
+            {% endfor %}
+        </fieldset>
     {% endif %}
 
     <button type="submit" class="btn">Salvar</button>

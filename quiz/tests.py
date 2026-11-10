@@ -147,6 +147,15 @@ class CadastroPerguntasQuizTests(TestCase):
         self.assertRedirects(resposta, self.url)
         self.assertEqual(self.obra.perguntas_quiz.get().enunciado, "Como Yari ficou conhecida?")
 
+    def test_tela_mostra_quadro_e_todos_os_campos(self):
+        # Quadro igual ao da edição da obra (10/11/2026).
+        self.client.force_login(self.editor)
+        resposta = self.client.get(self.url)
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Perguntas</legend>', html=False)
+        for nome in ("enunciado", "imagem", "explicacao", "ordem"):
+            self.assertContains(resposta, f'name="perguntas_quiz-0-{nome}"', count=1)
+        self.assertContains(resposta, 'class="form__arquivo"', count=1)
+
     def test_equipe_editorial_salva_alternativas(self):
         pergunta = PerguntaQuiz.objects.create(obra=self.obra, enunciado="Pergunta?", explicacao="Explicação.")
         self.client.force_login(self.editor)

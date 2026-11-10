@@ -1,0 +1,16 @@
+{# Um campo do ObraForm (rótulo, campo, ajuda e erros) — usado pelos #}
+{# quadros de gestao/obra_form.html. #}
+<div class="form__campo">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% if field.field.widget.input_type == "file" %}
+        {# Arquivo já enviado: "Atualmente: <link> [ ] Limpar / Modificar:". #}
+        {# A div deixa esses pedaços em linha corrida — direto no .form__campo #}
+        {# (flex em coluna) cada um virava uma linha e a caixa de "Limpar" #}
+        {# ficava sozinha no meio (ajuste pedido pelo Eloi em 10/11/2026). #}
+        <div class="form__arquivo">{{ field }}</div>
+    {% else %}
+        {{ field }}
+    {% endif %}
+    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+    {{ field.errors }}
+</div>

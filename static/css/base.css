@@ -1438,6 +1438,73 @@ button.quiz-alternativa:focus-visible {
     margin-top: 0.3rem;
 }
 
+/* Quadros da edição de obra (10/11/2026, pedido do Eloi) — cada grupo de
+   campos (Identificação, Imagens, Textos, Atividades de apoio, Quiz,
+   Glossário) num quadro com borda e o título na própria moldura, para
+   nenhum campo parecer "fora da casinha". Só cores do manual: fundo e
+   borda iguais aos do Glossário Gauchês; os cartões de pergunta/termo
+   dentro do quadro ficam no creme do site para se destacarem. */
+.form__secao {
+    border: 2px solid var(--cor-laranja-apagado);
+    border-radius: 12px;
+    background: var(--cor-laranja-claro);
+    padding: 0.6rem 1.2rem 1.2rem;
+    margin: 0;
+    min-width: 0;  /* fieldset não estoura a largura no celular */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form__secao-titulo {
+    font-family: "Boogaloo", cursive;
+    font-size: 1.5rem;
+    color: var(--cor-texto);
+    padding: 0 0.5rem;
+}
+
+.form__secao-subtitulo {
+    margin: 0.4rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--cor-laranja-apagado);
+    font-size: 1.25rem;
+}
+
+.form__secao-ajuda {
+    margin: 0;
+}
+
+.form__secao .form__questao {
+    background: var(--cor-fundo);
+    border-color: var(--cor-laranja-apagado);
+    margin: 0;
+    min-width: 0;
+}
+
+/* No celular, a caixa de texto (40 colunas por padrão) empurrava a tela
+   para os lados; com 100% ela acompanha a largura do quadro. */
+.form--obra .form__campo textarea,
+.form--obra .form__campo select,
+.form--obra .form__campo input:not([type="checkbox"]):not([type="radio"]) {
+    width: 100%;
+}
+
+/* Campo de arquivo com imagem/PDF já enviado: a caixa "Limpar" fica
+   colada à palavra, e o "Modificar:" ganha um respiro antes do botão. */
+.form__arquivo {
+    line-height: 1.8;
+    overflow-wrap: anywhere;  /* nome de arquivo longo quebra no celular */
+}
+
+.form__arquivo input[type="checkbox"] {
+    margin: 0 0.3rem 0 0.8rem;
+    vertical-align: middle;
+}
+
+.form__arquivo input[type="file"] {
+    margin-top: 0.3rem;
+}
+
 /* Área da escola (multiescola, etapa 2 — 09/11/2026): telas do admin da
    escola e do professor (escola/templates/escola/). Reaproveita .form,
    .tabela-gestao, .btn e .mensagem; aqui só o que é delas. */

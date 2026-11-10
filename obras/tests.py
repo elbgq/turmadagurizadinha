@@ -809,3 +809,37 @@ class PublicadaEmDestaqueTests(TestCase):
     def test_obra_nova_explica_que_comeca_como_rascunho(self):
         resposta = self.client.get(reverse("obras:obra_nova"))
         self.assertContains(resposta, "Obra nova: começa como")
+
+
+class FormularioObraEmQuadrosTests(TestCase):
+    """Edição de obra agrupada em quadros (10/11/2026). Como o template
+    chama cada campo pelo nome, este teste garante que nenhum campo do
+    ObraForm fica de fora da tela (nem aparece duas vezes)."""
+
+    def setUp(self):
+        editor = User.objects.create_user("editor-quadros", password="senha-teste-123")
+        editor.user_permissions.add(*Permission.objects.filter(codename__in=["add_obra", "change_obra", "view_obra"]))
+        self.client.force_login(editor)
+
+    def _confere_todos_os_campos(self, resposta):
+        for nome in ObraForm.base_fields:
+            self.assertContains(resposta, f'name="{nome}"', count=1, msg_prefix=nome)
+
+    def test_obra_nova_mostra_todos_os_campos(self):
+        resposta = self.client.get(reverse("obras:obra_nova"))
+        self._confere_todos_os_campos(resposta)
+        self.assertContains(resposta, "Salve a obra para poder cadastrar as perguntas.")
+
+    def test_edicao_mostra_todos_os_campos_e_os_quadros(self):
+        obra = Obra.objects.create(titulo="Quadros", slug="quadros")
+        resposta = self.client.get(reverse("obras:obra_editar", args=[obra.pk]))
+        self._confere_todos_os_campos(resposta)
+        for titulo in ["Identificação", "Imagens", "Textos", "Atividades de apoio", "Glossário Gauchês"]:
+            self.assertContains(resposta, f'<legend class="form__secao-titulo">{titulo}</legend>', html=False)
+
+    def test_pdf_da_atividade_fica_no_quadro_das_atividades(self):
+        obra = Obra.objects.create(titulo="Quadros PDF", slug="quadros-pdf")
+        html = self.client.get(reverse("obras:obra_editar", args=[obra.pk])).content.decode()
+        inicio = html.index(">Atividades de apoio</legend>")
+        self.assertLess(inicio, html.index('name="atividade_pdf"'))
+        self.assertLess(html.index('name="atividade_pdf"'), html.index(">Perguntas</h3>"))
