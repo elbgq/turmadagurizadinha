@@ -701,7 +701,9 @@ a:hover {
 }
 
 .obra-texto p {
-    margin: 0 0 1.2em;
+    /* Espaço entre parágrafos aumentado de 1.2em para 2em a pedido da
+       cliente (reunião de 09/11/2026). */
+    margin: 0 0 2em;
 }
 
 .obra-texto p:last-child {
@@ -743,6 +745,14 @@ a:hover {
     margin: 0;
     padding-left: 1.2rem;
     line-height: 1.6;
+}
+
+/* Espaço entre os tópicos do Resumo para o professor (resumo.html) — pedido
+   da cliente em reunião de 09/11/2026. Classe própria da lista do Resumo:
+   o Glossário Gauchês e a Atividade usam a mesma .obra-glossario__lista
+   e não mudam. */
+.obra-resumo__lista li + li {
+    margin-top: 0.8em;
 }
 
 /* Tópicos para o professor (página de Resumo da obra) — mesma largura

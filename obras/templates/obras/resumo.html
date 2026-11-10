@@ -12,7 +12,7 @@
     <h1 class="obra-glossario__titulo obra-quadro__titulo">Resumo para o professor(a): {{ obra.titulo }}</h1>
 
     {% if obra.topicos_resumo_lista %}
-        <ul class="obra-glossario__lista">
+        <ul class="obra-glossario__lista obra-resumo__lista">
             {% for topico in obra.topicos_resumo_lista %}
                 <li>{{ topico }}</li>
             {% endfor %}
