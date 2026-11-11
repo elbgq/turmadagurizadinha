@@ -42,6 +42,18 @@ Cada app tem seus próprios `templates/<app>/`, `models.py`, `views.py`, `urls.p
 
 **Cadastro de conteúdo fora do Admin (acréscimo ao escopo, pós-Fase 4):** para quem só vai cadastrar obra, o Django Admin é uma tela pensada para desenvolvedor (bastante técnica). Foi acrescentada uma tela própria, com a cara do próprio site, para isso: quem tem a permissão de cadastro (grupo "Equipe editorial" ou superusuário) vê um botão "Cadastrar obra" direto na Home e também um link "Gerenciar obras" no menu do usuário. De lá dá para criar/editar/excluir uma `Obra` (incluindo o upload da `capa`), cadastrar as perguntas ("Atividades de apoio") e as alternativas de cada uma, com o slug da URL gerado automaticamente a partir do título quando não for informado. O Django Admin continua existindo do mesmo jeito — esta é só uma porta de entrada mais simples para quem não precisa do resto do Admin. Quem não tem essa permissão nem vê o botão na Home; se tentar acessar a URL direto, recebe uma mensagem de acesso negado.
 
+**Como montar e liberar o quiz de uma obra (passo a passo, 11/11/2026):**
+1. Cadastre e **salve** a obra (Gerenciar obras → Nova obra). O quadro "Quiz interativo" só aparece depois, na edição da obra já salva — a tela de perguntas (`/quiz/gerenciar/<id da obra>/`) depende do id da obra.
+2. Clique em "Perguntas do quiz" (ou no link "Quiz" em Gerenciar obras), cadastre as perguntas (enunciado, imagem opcional, explicação, ordem) e salve.
+3. Em cada pergunta já salva, abra as alternativas: de 3 a 5, exatamente uma correta. Pergunta incompleta não entra no quiz (sem aviso de erro para o aluno).
+4. Marque a obra como **Publicada**. O aluno abre a obra → "Quiz interativo" (`obra/<slug>/quiz/`) → **INICIAR**. Sem nenhuma pergunta completa, a página avisa que o quiz ainda não tem perguntas e não mostra o INICIAR. Enquanto a obra é rascunho, só a equipe editorial abre e testa o quiz.
+
+**Como cadastrar as Atividades de apoio de uma obra (passo a passo, 11/11/2026):**
+1. Cadastre e **salve** a obra. As perguntas só aparecem na edição da obra já salva, no quadro "Atividades de apoio".
+2. Nesse quadro, anexe o PDF da atividade (opcional) e preencha o enunciado e a ordem da pergunta. Salve a obra — a cada salvamento aparece um novo enunciado em branco para a próxima pergunta.
+3. Em cada pergunta já salva, clique em "Gerenciar alternativas", preencha o texto e marque a correta (2 linhas em branco por vez; salve e repita se precisar de mais). Diferente do quiz, não há regra de quantidade de alternativas.
+4. Na página da obra, "Atividade" mostra as perguntas sem gabarito, com o botão "Imprimir atividades", e o botão para baixar o PDF, se houver.
+
 **Segurança e versão do Django (atualização):** o projeto foi atualizado do Django 5.1 (suporte de segurança encerrado em 31/12/2025) para o **Django 5.2 LTS** (suporte de segurança até abr/2028). O `SECRET_KEY` deixou de ter um valor fixo versionado no `settings.py`: agora ele é lido de um arquivo `.env` local (não versionado — carregado via `python-dotenv`), com `.env.example` servindo de modelo no repositório. Em desenvolvimento, se o `.env` não existir, o projeto ainda roda com uma chave gerada na hora (só localmente); em produção (`DEBUG=False`), a variável de ambiente passa a ser obrigatória — configurada diretamente no servidor na Fase 10, nunca no repositório.
 
 **Ilustração da obra (decisão revista):** a ideia de várias ilustrações por obra (`IlustracaoObra`) foi **descartada** — a cliente confirmou que cada obra tem só uma imagem, a própria `capa` (campo já existente em `Obra`), então não há necessidade dessa tabela extra.

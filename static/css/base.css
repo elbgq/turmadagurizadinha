@@ -353,7 +353,8 @@ a:hover {
 }
 
 .form__correta,
-.form__excluir {
+.form__excluir,
+.form__opcao {
     display: flex;
     align-items: center;
     gap: 0.4rem;
