@@ -7,10 +7,10 @@
 {% include "escola/_mensagens.html" %}
 
 {% if pode_editar %}
-    <p>Crie as turmas e designe o professor(a) de cada uma. Ele(a) cadastra os alunos e imprime os cartões de acesso. Cada turma tem até {{ limite }} alunos.</p>
+    <p>Crie as turmas e designe o professor(a) de cada uma. Abra a turma para cadastrar os alunos, gerar as senhas, imprimir os cartões de acesso e registrar o termo do responsável. Cada turma tem até {{ limite }} alunos.</p>
     <p><a class="btn" href="{% url 'escola:turma_nova' %}">+ Nova turma</a></p>
 {% elif eh_professor %}
-    <p>Aqui aparecem as turmas em que você foi designado(a). As turmas são criadas pela administração da escola.</p>
+    <p>Aqui aparecem as turmas em que você foi designado(a). As turmas e o cadastro dos alunos ficam com a administração da escola.</p>
 {% endif %}
 
 <div class="escola-tabela">
@@ -21,7 +21,7 @@
     <tbody>
         {% for turma in turmas %}
             <tr>
-                <td>{% if eh_professor %}<a href="{% url 'escola:turma' turma.pk %}">{{ turma.nome }}</a>{% else %}{{ turma.nome }}{% endif %}</td>
+                <td><a href="{% url 'escola:turma' turma.pk %}">{{ turma.nome }}</a></td>
                 <td>{{ turma.ano_letivo }}</td>
                 {% if not eh_professor %}<td>{% if turma.professor %}{{ turma.professor.user.first_name }}{% else %}<em>sem professor(a)</em>{% endif %}</td>{% endif %}
                 <td>{{ turma.alunos_ativos.count }} / {{ limite }}</td>

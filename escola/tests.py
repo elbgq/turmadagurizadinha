@@ -79,10 +79,50 @@ class AcessoAAreaDaEscolaTests(EscolasMixin, TestCase):
         self.assertEqual(self._status(self.prof_a, "professores"), 403)
         self.assertEqual(self._status(self.prof_a, "professor_novo"), 403)
 
-    def test_admin_da_escola_nao_mexe_em_alunos(self):
-        self.assertEqual(self._status(self.admin_a, "turma", self.turma_a.pk), 403)
-        self.assertEqual(self._status(self.admin_a, "aluno_editar", self.aluno_a.perfil.pk), 403)
-        self.assertEqual(self._status(self.admin_a, "cartoes", self.turma_a.pk), 403)
+    def test_professor_nao_cadastra_nem_mexe_no_acesso_dos_alunos(self):
+        """13/11/2026: cadastro, edição, mudança de turma, termo e senhas são do Admin da escola."""
+        aluno = self.aluno_a.perfil.pk
+        for nome, args, metodo in [
+            ("aluno_novo", [self.turma_a.pk], "get"), ("aluno_novo", [self.turma_a.pk], "post"),
+            ("alunos_lote", [self.turma_a.pk], "get"), ("alunos_lote", [self.turma_a.pk], "post"),
+            ("novas_senhas_turma", [self.turma_a.pk], "post"),
+            ("aluno_editar", [aluno], "get"), ("aluno_editar", [aluno], "post"),
+            ("aluno_nova_senha", [aluno], "post"), ("aluno_ativo", [aluno], "post"),
+            ("aluno_consentimento", [aluno], "get"), ("aluno_consentimento", [aluno], "post"),
+        ]:
+            with self.subTest(nome, metodo=metodo):
+                self.assertEqual(self._status(self.prof_a, nome, *args, metodo=metodo), 403)
+        self.aluno_a.refresh_from_db()
+        self.assertTrue(self.aluno_a.is_active)
+        self.assertFalse(self.aluno_a.perfil.consentimentos.exists())
+
+    def test_admin_da_escola_nao_ve_desempenho(self):
+        """13/11/2026: relatórios, resultados e atividade complementar são só do professor."""
+        for nome, args, metodo in [
+            ("turma_relatorio", [self.turma_a.pk], "get"),
+            ("aluno_relatorio", [self.aluno_a.perfil.pk], "get"),
+            ("atividades_lancar", [self.turma_a.pk], "get"),
+            ("atividades_lancar", [self.turma_a.pk], "post"),
+        ]:
+            with self.subTest(nome, metodo=metodo):
+                self.assertEqual(self._status(self.admin_a, nome, *args, metodo=metodo), 403)
+
+    def test_desempenho_fica_fora_do_admin_da_escola_mesmo_com_a_permissao(self):
+        """Segunda trava: a turma/aluno do relatório é buscada só entre as do professor (404)."""
+        from django.contrib.auth.models import Permission
+
+        self.admin_a.user_permissions.add(Permission.objects.get(codename="ver_desempenho_turma"))
+        admin = User.objects.get(pk=self.admin_a.pk)  # limpa o cache de permissões
+        self.assertEqual(self._status(admin, "turma_relatorio", self.turma_a.pk), 404)
+        self.assertEqual(self._status(admin, "aluno_relatorio", self.aluno_a.perfil.pk), 404)
+        self.assertEqual(self._status(admin, "atividades_lancar", self.turma_a.pk), 404)
+
+    def test_admin_da_escola_nao_tem_acesso_ao_django_admin(self):
+        self.client.force_login(self.admin_a)
+        resposta = self.client.get(reverse("admin:quiz_resultadoquiz_changelist"))
+        self.assertRedirects(resposta, reverse("admin:login") + "?next=" + reverse("admin:quiz_resultadoquiz_changelist"))
+        resposta = self.client.get(reverse("admin:escola_entregaatividade_changelist"))
+        self.assertEqual(resposta.status_code, 302)
 
     def test_professor_nao_cria_nem_edita_turma(self):
         self.assertEqual(self._status(self.prof_a, "turma_nova"), 403)
@@ -92,15 +132,18 @@ class AcessoAAreaDaEscolaTests(EscolasMixin, TestCase):
         self.assertEqual(self._status(self.admin_a, "professor_editar", self.prof_b.perfil.pk), 404)
         self.assertEqual(self._status(self.admin_a, "professor_ativo", self.prof_b.perfil.pk, metodo="post"), 404)
         self.assertEqual(self._status(self.prof_a, "turma", self.turma_b.pk), 404)
-        self.assertEqual(self._status(self.prof_a, "aluno_editar", self.aluno_b.perfil.pk), 404)
-        self.assertEqual(self._status(self.prof_a, "aluno_nova_senha", self.aluno_b.perfil.pk, metodo="post"), 404)
+        self.assertEqual(self._status(self.admin_a, "turma", self.turma_b.pk), 404)
+        self.assertEqual(self._status(self.admin_a, "aluno_editar", self.aluno_b.perfil.pk), 404)
+        self.assertEqual(self._status(self.admin_a, "aluno_nova_senha", self.aluno_b.perfil.pk, metodo="post"), 404)
+        self.assertEqual(self._status(self.admin_a, "aluno_consentimento", self.aluno_b.perfil.pk), 404)
+        self.assertEqual(self._status(self.admin_a, "aluno_novo", self.turma_b.pk), 404)
         self.prof_b.refresh_from_db()
         self.assertTrue(self.prof_b.is_active)
 
     def test_professor_nao_ve_turma_nem_aluno_do_colega(self):
         self.assertEqual(self._status(self.prof_a, "turma", self.turma_a2.pk), 404)
-        self.assertEqual(self._status(self.prof_a, "aluno_ativo", self.aluno_a2.perfil.pk, metodo="post"), 404)
-        self.assertEqual(self._status(self.prof_a, "aluno_consentimento", self.aluno_a2.perfil.pk), 404)
+        self.assertEqual(self._status(self.prof_a, "cartoes", self.turma_a2.pk), 404)
+        self.assertEqual(self._status(self.prof_a, "aluno_relatorio", self.aluno_a2.perfil.pk), 404)
 
     def test_navbar_mostra_o_link_certo(self):
         self.client.force_login(self.admin_a)
@@ -170,12 +213,13 @@ class ProfessoresDoAdminDaEscolaTests(EscolasMixin, TestCase):
         self.prof_a.refresh_from_db()
         self.assertTrue(self.prof_a.is_active)
 
-    def test_ve_turmas_da_escola_sem_alunos(self):
+    def test_ve_turmas_da_escola_com_link_para_os_alunos(self):
         resposta = self.client.get(reverse("escola:turmas"))
         self.assertContains(resposta, "3º ano A")
         self.assertContains(resposta, "4º ano A")
         self.assertNotContains(resposta, "3º ano B")
-        self.assertNotContains(resposta, 'href="%s"' % reverse("escola:turma", args=[self.turma_a.pk]))
+        self.assertContains(resposta, 'href="%s"' % reverse("escola:turma", args=[self.turma_a.pk]))
+        self.assertContains(resposta, 'href="%s"' % reverse("escola:turma", args=[self.turma_a2.pk]))
 
 
 class TurmasDoProfessorTests(EscolasMixin, TestCase):
@@ -190,7 +234,7 @@ class TurmasDoProfessorTests(EscolasMixin, TestCase):
 
     def test_lista_avisa_que_a_turma_vem_da_escola(self):
         resposta = self.client.get(reverse("escola:turmas"))
-        self.assertContains(resposta, "criadas pela administração da escola")
+        self.assertContains(resposta, "As turmas e o cadastro dos alunos ficam com a administração da escola")
         self.assertNotContains(resposta, reverse("escola:turma_nova"))
 
 
@@ -221,6 +265,8 @@ class TurmasDoAdminDaEscolaTests(EscolasMixin, TestCase):
         self.assertEqual(self.client.get(reverse("escola:turma", args=[turma.pk])).status_code, 200)
         self.client.force_login(self.prof_a)
         self.assertEqual(self.client.get(reverse("escola:turma", args=[turma.pk])).status_code, 404)
+        self.client.force_login(self.admin_a)  # a escola vê todas as turmas dela
+        self.assertEqual(self.client.get(reverse("escola:turma", args=[turma.pk])).status_code, 200)
 
     def test_cria_turma_sem_professor(self):
         self.client.post(reverse("escola:turma_nova"), {"nome": "5º ano C", "ano_letivo": 2027})
@@ -269,10 +315,12 @@ class TurmasDoAdminDaEscolaTests(EscolasMixin, TestCase):
                 self.assertEqual(self.client.get(reverse(f"escola:{nome}", args=args)).status_code, 200)
 
 
-class AlunosDoProfessorTests(EscolasMixin, TestCase):
+class AlunosDoAdminDaEscolaTests(EscolasMixin, TestCase):
+    """13/11/2026: o cadastro e o acesso dos alunos passaram do professor para o Admin da escola."""
+
     def setUp(self):
         super().setUp()
-        self.client.force_login(self.prof_a)
+        self.client.force_login(self.admin_a)
 
     def _cartoes(self):
         return self.client.session.get(CHAVE_CARTOES, [])
@@ -332,11 +380,31 @@ class AlunosDoProfessorTests(EscolasMixin, TestCase):
         self.client.post(reverse("escola:novas_senhas_turma", args=[self.turma_a.pk]))
         self.assertEqual([c["login"] for c in self._cartoes()], ["aluno.a"])
 
+    def test_cadastra_em_qualquer_turma_da_escola(self):
+        self.client.post(reverse("escola:aluno_novo", args=[self.turma_a2.pk]), {"nome": "Rita"})
+        self.assertEqual(User.objects.get(first_name="Rita").perfil.turma, self.turma_a2)
+        sem_professor = Turma.objects.create(escola=self.escola_a, nome="5º ano")
+        self.client.post(reverse("escola:alunos_lote", args=[sem_professor.pk]), {"nomes": "Lia\nTeo"})
+        self.assertEqual(sem_professor.alunos.count(), 2)
+
     def test_cartoes_de_outra_turma_nao_aparecem(self):
         self.client.post(reverse("escola:aluno_novo", args=[self.turma_a.pk]), {"nome": "Maria"})
-        outra = Turma.objects.create(escola=self.escola_a, nome="Outra", professor=self.prof_a.perfil)
-        resposta = self.client.get(reverse("escola:cartoes", args=[outra.pk]))
-        self.assertContains(resposta, "Nenhum cartão para imprimir")
+        senha = self._cartoes()[0]["senha"]
+        resposta = self.client.get(reverse("escola:cartoes", args=[self.turma_a2.pk]))
+        self.assertNotContains(resposta, senha)
+        self.assertNotContains(resposta, "maria.3oanoa")
+        self.assertContains(resposta, "aluno.a2")  # sem senha na sessão: cartões só com o usuário
+        self.assertContains(resposta, "Senha: ____________")
+
+    def test_tela_da_turma_tem_as_acoes_de_cadastro_e_nao_o_desempenho(self):
+        resposta = self.client.get(reverse("escola:turma", args=[self.turma_a.pk]))
+        self.assertContains(resposta, reverse("escola:aluno_novo", args=[self.turma_a.pk]))
+        self.assertContains(resposta, reverse("escola:aluno_editar", args=[self.aluno_a.perfil.pk]))
+        self.assertContains(resposta, reverse("escola:aluno_consentimento", args=[self.aluno_a.perfil.pk]))
+        self.assertContains(resposta, reverse("escola:novas_senhas_turma", args=[self.turma_a.pk]))
+        self.assertNotContains(resposta, reverse("escola:turma_relatorio", args=[self.turma_a.pk]))
+        self.assertNotContains(resposta, reverse("escola:atividades_lancar", args=[self.turma_a.pk]))
+        self.assertNotContains(resposta, reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk]))
 
     def test_muda_de_turma_e_o_historico_vai_junto(self):
         outra = Turma.objects.create(escola=self.escola_a, nome="Outra", professor=self.prof_a.perfil)
@@ -348,12 +416,21 @@ class AlunosDoProfessorTests(EscolasMixin, TestCase):
         self.assertEqual(self.aluno_a.perfil.turma, outra)
         self.assertEqual(self.aluno_a.perfil.resultados_quiz.count(), 1)
 
-    def test_nao_move_aluno_para_turma_do_colega(self):
+    def test_move_aluno_entre_turmas_da_escola_mas_nao_para_outra_escola(self):
         url = reverse("escola:aluno_editar", args=[self.aluno_a.perfil.pk])
-        resposta = self.client.post(url, {"nome": "Aluno A", "turma": self.turma_a2.pk})
+        resposta = self.client.post(url, {"nome": "Aluno A", "turma": self.turma_b.pk})
         self.assertEqual(resposta.status_code, 200)
         self.aluno_a.perfil.refresh_from_db()
         self.assertEqual(self.aluno_a.perfil.turma, self.turma_a)
+        resposta = self.client.post(url, {"nome": "Aluno A", "turma": self.turma_a2.pk})
+        self.assertRedirects(resposta, reverse("escola:turma", args=[self.turma_a.pk]))
+        self.aluno_a.perfil.refresh_from_db()
+        self.assertEqual(self.aluno_a.perfil.turma, self.turma_a2)
+        # Quem passa a ver o aluno é o professor da turma nova.
+        self.client.force_login(self.prof_a2)
+        self.assertEqual(self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk])).status_code, 200)
+        self.client.force_login(self.prof_a)
+        self.assertEqual(self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk])).status_code, 404)
 
     def test_desativa_e_reativa_aluno(self):
         url = reverse("escola:aluno_ativo", args=[self.aluno_a.perfil.pk])
@@ -373,17 +450,66 @@ class AlunosDoProfessorTests(EscolasMixin, TestCase):
         })
         self.assertRedirects(resposta, reverse("escola:turma", args=[self.turma_a.pk]))
         consentimento = self.aluno_a.perfil.consentimento_valido()
-        self.assertEqual((consentimento.nome_responsavel, consentimento.registrado_por), ("Maria", self.prof_a))
+        self.assertEqual((consentimento.nome_responsavel, consentimento.registrado_por), ("Maria", self.admin_a))
+        self.assertContains(self.client.get(reverse("escola:turma", args=[self.turma_a.pk])), "Sim (Maria)")
+        # O professor da turma vê o termo, só para leitura.
+        self.client.force_login(self.prof_a)
         self.assertContains(self.client.get(reverse("escola:turma", args=[self.turma_a.pk])), "Sim (Maria)")
 
     def test_telas_abrem(self):
         for nome, args in [
             ("turmas", []), ("turma", [self.turma_a.pk]),
             ("aluno_novo", [self.turma_a.pk]), ("alunos_lote", [self.turma_a.pk]), ("cartoes", [self.turma_a.pk]),
-            ("aluno_editar", [self.aluno_a.perfil.pk]),
+            ("aluno_editar", [self.aluno_a.perfil.pk]), ("aluno_consentimento", [self.aluno_a.perfil.pk]),
+            ("turma", [self.turma_a2.pk]),
         ]:
             with self.subTest(nome):
                 self.assertEqual(self.client.get(reverse(f"escola:{nome}", args=args)).status_code, 200)
+
+
+class TurmaVistaPeloProfessorTests(EscolasMixin, TestCase):
+    """13/11/2026: o professor vê os alunos, o termo (só leitura) e os cartões sem senha."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.prof_a)
+
+    def test_lista_os_alunos_sem_as_acoes_de_cadastro(self):
+        resposta = self.client.get(reverse("escola:turma", args=[self.turma_a.pk]))
+        self.assertContains(resposta, "aluno.a")
+        self.assertContains(resposta, reverse("escola:turma_relatorio", args=[self.turma_a.pk]))
+        self.assertContains(resposta, reverse("escola:atividades_lancar", args=[self.turma_a.pk]))
+        self.assertContains(resposta, reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk]))
+        for url in [
+            reverse("escola:aluno_novo", args=[self.turma_a.pk]), reverse("escola:alunos_lote", args=[self.turma_a.pk]),
+            reverse("escola:aluno_editar", args=[self.aluno_a.perfil.pk]),
+            reverse("escola:aluno_nova_senha", args=[self.aluno_a.perfil.pk]),
+            reverse("escola:aluno_ativo", args=[self.aluno_a.perfil.pk]),
+            reverse("escola:aluno_consentimento", args=[self.aluno_a.perfil.pk]),
+            reverse("escola:novas_senhas_turma", args=[self.turma_a.pk]),
+        ]:
+            with self.subTest(url):
+                self.assertNotContains(resposta, url)
+
+    def test_termo_so_leitura(self):
+        self.assertContains(self.client.get(reverse("escola:turma", args=[self.turma_a.pk])), "Não registrado")
+        ConsentimentoResponsavel.objects.create(
+            aluno=self.aluno_a.perfil, nome_responsavel="Joana", parentesco="mãe",
+            meio=ConsentimentoResponsavel.PAPEL, data_consentimento=timezone.now(), registrado_por=self.admin_a,
+        )
+        self.assertContains(self.client.get(reverse("escola:turma", args=[self.turma_a.pk])), "Sim (Joana)")
+
+    def test_cartoes_so_com_o_usuario(self):
+        criar_conta("inativo", Perfil.ALUNO, self.escola_a, self.turma_a, ativa=False)
+        sessao = self.client.session
+        sessao[CHAVE_CARTOES] = [{"turma": self.turma_a.pk, "nome": "X", "login": "aluno.a", "senha": "sapo123"}]
+        sessao.save()
+        resposta = self.client.get(reverse("escola:cartoes", args=[self.turma_a.pk]))
+        self.assertContains(resposta, "aluno.a")
+        self.assertNotContains(resposta, "inativo")
+        self.assertNotContains(resposta, "sapo123")  # o professor nunca vê senha
+        self.assertContains(resposta, "Senha: ____________")
+        self.assertContains(resposta, "peça à administração da escola")
 
 
 class EscolaBloqueadaTests(EscolasMixin, TestCase):

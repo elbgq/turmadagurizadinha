@@ -662,10 +662,16 @@ class GruposDePapelTests(TestCase):
     def test_permissoes_dos_papeis(self):
         professor = criar_conta("prof@x.com", Perfil.PROFESSOR)
         admin_escola = criar_conta("admin@x.com", Perfil.ADMIN_ESCOLA, Escola.objects.create(nome="X"))
-        self.assertTrue(professor.has_perm("contas.cadastrar_alunos"))
+        # 13/11/2026: cadastro de alunos com o Admin da escola; desempenho só com o professor.
+        self.assertFalse(professor.has_perm("contas.cadastrar_alunos"))
         self.assertFalse(professor.has_perm("contas.cadastrar_professores"))
+        self.assertTrue(professor.has_perm("contas.ver_desempenho_turma"))
+        self.assertTrue(professor.has_perm("contas.view_turma"))
         self.assertTrue(admin_escola.has_perm("contas.cadastrar_professores"))
-        self.assertFalse(admin_escola.has_perm("contas.cadastrar_alunos"))
+        self.assertTrue(admin_escola.has_perm("contas.cadastrar_alunos"))
+        self.assertFalse(admin_escola.has_perm("contas.ver_desempenho_turma"))
+        self.assertFalse(admin_escola.has_perm("quiz.view_resultadoquiz"))
+        self.assertFalse(admin_escola.has_perm("escola.view_entregaatividade"))
 
 
 @override_settings(ROOT_URLCONF="contas.tests")
@@ -687,8 +693,11 @@ class IsolamentoEntreEscolasTests(DuasEscolasMixin, TestCase):
         self.assertEqual(self._status(self.admin_a, f"/teste/professor/{self.prof_a.perfil.pk}/"), 200)
         self.assertEqual(self._status(self.admin_a, f"/teste/professor/{self.prof_b.perfil.pk}/"), 404)
 
-    def test_admin_da_escola_nao_ve_alunos(self):
-        self.assertEqual(self._status(self.admin_a, f"/teste/aluno/{self.aluno_a.perfil.pk}/"), 404)
+    def test_admin_da_escola_ve_alunos_so_da_propria_escola(self):
+        # 13/11/2026: o admin da escola cadastra os alunos (mas não vê resultados).
+        self.assertEqual(self._status(self.admin_a, f"/teste/aluno/{self.aluno_a.perfil.pk}/"), 200)
+        self.assertEqual(self._status(self.admin_a, f"/teste/aluno/{self.aluno_a2.perfil.pk}/"), 200)
+        self.assertEqual(self._status(self.admin_a, f"/teste/aluno/{self.aluno_b.perfil.pk}/"), 404)
 
     def test_professor_ve_so_alunos_das_proprias_turmas(self):
         self.assertEqual(self._status(self.prof_a, f"/teste/aluno/{self.aluno_a.perfil.pk}/"), 200)

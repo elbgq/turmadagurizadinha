@@ -7,12 +7,15 @@
     <p><a href="{% url 'escola:turma' turma.pk %}">&larr; Voltar para a turma</a></p>
     <h1>Cartões de acesso — {{ turma.nome }}</h1>
     {% include "escola/_mensagens.html" %}
-    {% if cartoes %}
+    {% if com_senha %}
         <p>Imprima e recorte os cartões. Depois de sair desta tela, as senhas não podem ser vistas de novo: só gerando uma senha nova.</p>
-        <button type="button" class="btn btn--ciano" onclick="window.print()">Imprimir cartões</button>
+    {% elif cartoes %}
+        <p>Cartões com o usuário de cada aluno ativo. A senha não fica guardada no sistema: o espaço fica em branco para preencher à mão.
+        {% if pode_gerar_senha %}Para imprimir com a senha, na turma use "Nova senha" (um aluno) ou "Gerar senhas novas para a turma toda".{% else %}Senha esquecida ou nova: peça à administração da escola.{% endif %}</p>
     {% else %}
-        <p>Nenhum cartão para imprimir agora. As senhas não ficam guardadas: na turma, use "Nova senha" (um aluno) ou "Gerar senhas novas para a turma toda".</p>
+        <p>Nenhum aluno ativo nesta turma.</p>
     {% endif %}
+    {% if cartoes %}<button type="button" class="btn btn--ciano" onclick="window.print()">Imprimir cartões</button>{% endif %}
 </div>
 
 <div class="escola-cartoes">
@@ -22,7 +25,7 @@
             <p class="escola-cartao__nome">{{ c.nome }}</p>
             <p class="escola-cartao__turma">{{ turma.nome }}</p>
             <p>Usuário: <strong>{{ c.login }}</strong></p>
-            <p>Senha: <strong>{{ c.senha }}</strong></p>
+            <p>Senha: {% if c.senha %}<strong>{{ c.senha }}</strong>{% else %}____________{% endif %}</p>
             <p class="escola-cartao__site">{{ endereco }}</p>
         </div>
     {% endfor %}

@@ -4,11 +4,16 @@ fora do Django Admin (que fica só para a equipe da plataforma).
 
 - Admin da escola: cadastra, edita, desativa e reativa os professores da
   escola, dentro do limite do plano; cria e edita as turmas e designa o
-  professor de cada uma (revisão de 09/11/2026); não vê os alunos.
-- Professor: vê só as turmas em que foi designado, cadastra os alunos (um
-  a um ou em lote), gera login e senha simples, imprime os cartões de
-  acesso, gera senha nova, move ou desativa aluno e registra o
-  consentimento do responsável.
+  professor de cada uma (revisão de 09/11/2026). Desde 13/11/2026 também
+  cuida dos alunos de todas as turmas da escola: cadastra (um a um ou em
+  lote), gera login e senha simples, imprime os cartões de acesso com a
+  senha, gera senha nova, edita, move entre turmas, desativa e registra o
+  termo do responsável. Não vê desempenho (quiz, relatórios, atividade
+  complementar): isso é só do professor.
+- Professor: vê só as turmas em que foi designado e a lista de alunos
+  delas (com a situação do termo, só leitura), imprime os cartões só com o
+  usuário (sem senha) e cuida do desempenho: relatórios da turma e do
+  aluno e lançamento da atividade complementar.
 
 Todo registro é buscado pelo escopo da conta logada (contas/escopo.py):
 id de outra escola, ou de turma de outro professor, dá 404. Sem a
@@ -36,8 +41,11 @@ from .forms import (
 )
 from .models import EntregaAtividade
 
-# Cartões com as senhas recém-geradas ficam na sessão do professor até a
-# próxima geração (a senha não pode ser lida de volta do banco).
+# Cartões com as senhas recém-geradas ficam na sessão de quem gerou (o
+# Admin da escola) até a próxima geração: a senha não pode ser lida de
+# volta do banco. Sem cartões na sessão — e sempre para o professor —, a
+# tela de cartões imprime o usuário de cada aluno ativo com a senha em
+# branco, para preencher à mão (decisão de 13/11/2026).
 CHAVE_CARTOES = "escola_cartoes"
 
 
@@ -154,8 +162,9 @@ def professor_ativo(request, pk):
 
 
 # --------------------------------------------------------------------
-# Turmas: lista para os dois papéis; criar/editar e designar o professor
-# só o Admin da escola (revisão de 09/11/2026); o resto só o professor.
+# Turmas: lista e tela da turma para os dois papéis (o professor, só as
+# dele); criar/editar e designar o professor só o Admin da escola
+# (revisão de 09/11/2026), que também cuida dos alunos (13/11/2026).
 # --------------------------------------------------------------------
 
 
@@ -179,7 +188,7 @@ def turma_nova(request):
         turma = form.save()
         if turma.professor_id:
             messages.success(
-                request, f"Turma {turma.nome} criada. {turma.professor.user.first_name} já pode cadastrar os alunos."
+                request, f"Turma {turma.nome} criada, com {turma.professor.user.first_name}. Abra a turma para cadastrar os alunos."
             )
         else:
             messages.success(request, f"Turma {turma.nome} criada. Falta designar o professor(a).")
@@ -199,12 +208,18 @@ def turma_editar(request, pk):
 
 
 def _turma_do_professor(request, pk):
+    """Só turma em que a conta é o professor designado (desempenho: nunca o admin da escola)."""
     return do_escopo_ou_404("turmas", request.user, pk=pk, professor=request.user.perfil)
 
 
-@area_da_escola("contas.cadastrar_alunos")
+def _turma_da_escola(request, pk):
+    """Turma do escopo: qualquer uma da escola para o admin; só as próprias para o professor."""
+    return do_escopo_ou_404("turmas", request.user, pk=pk)
+
+
+@area_da_escola("contas.view_turma")
 def turma(request, pk):
-    turma = _turma_do_professor(request, pk)
+    turma = _turma_da_escola(request, pk)
     alunos = (
         alunos_visiveis(request.user).filter(turma=turma).select_related("user")
         .prefetch_related("consentimentos").order_by("-user__is_active", "user__first_name")
@@ -215,11 +230,12 @@ def turma(request, pk):
         "ativos": turma.alunos_ativos().count(),
         "limite": LIMITE_ALUNOS_POR_TURMA,
         "tem_cartoes": any(c["turma"] == turma.pk for c in request.session.get(CHAVE_CARTOES, [])),
+        "eh_professor": request.user.perfil.tipo == Perfil.PROFESSOR,
     })
 
 
 # --------------------------------------------------------------------
-# Alunos (professor)
+# Alunos: cadastro e acesso pelo Admin da escola (13/11/2026)
 # --------------------------------------------------------------------
 
 
@@ -246,7 +262,7 @@ def _guardar_cartoes(request, cartoes):
 
 @area_da_escola("contas.cadastrar_alunos")
 def aluno_novo(request, pk):
-    turma = _turma_do_professor(request, pk)
+    turma = _turma_da_escola(request, pk)
     form = AlunoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -263,7 +279,7 @@ def aluno_novo(request, pk):
 
 @area_da_escola("contas.cadastrar_alunos")
 def alunos_em_lote(request, pk):
-    turma = _turma_do_professor(request, pk)
+    turma = _turma_da_escola(request, pk)
     form = AlunosEmLoteForm(request.POST or None, turma=turma)
     if request.method == "POST" and form.is_valid():
         try:
@@ -278,13 +294,28 @@ def alunos_em_lote(request, pk):
     return render(request, "escola/alunos_lote.html", {"form": form, "turma": turma})
 
 
-@area_da_escola("contas.cadastrar_alunos")
+@area_da_escola("contas.view_turma")
 def cartoes(request, pk):
-    turma = _turma_do_professor(request, pk)
-    lista = [c for c in request.session.get(CHAVE_CARTOES, []) if c["turma"] == turma.pk]
+    """
+    Cartões de acesso. Logo depois de gerar senhas (só o Admin da escola),
+    com a senha; fora isso — e sempre para o professor —, com o usuário de
+    cada aluno ativo e a senha em branco.
+    """
+    turma = _turma_da_escola(request, pk)
+    pode_gerar_senha = request.user.has_perm("contas.cadastrar_alunos")
+    com_senha = []
+    if pode_gerar_senha:
+        com_senha = [c for c in request.session.get(CHAVE_CARTOES, []) if c["turma"] == turma.pk]
+    lista = com_senha or [
+        _cartao(perfil, None)
+        for perfil in alunos_visiveis(request.user).filter(turma=turma, user__is_active=True)
+        .select_related("user").order_by("user__first_name")
+    ]
     return render(request, "escola/cartoes.html", {
         "turma": turma,
         "cartoes": lista,
+        "com_senha": bool(com_senha),
+        "pode_gerar_senha": pode_gerar_senha,
         "endereco": request.build_absolute_uri("/"),
     })
 
@@ -293,7 +324,7 @@ def cartoes(request, pk):
 @area_da_escola("contas.cadastrar_alunos")
 def novas_senhas_turma(request, pk):
     """Senha nova para todos os alunos ativos da turma (para reimprimir os cartões)."""
-    turma = _turma_do_professor(request, pk)
+    turma = _turma_da_escola(request, pk)
     cartoes_novos = []
     with transaction.atomic():
         for perfil in turma.alunos_ativos().select_related("user").order_by("user__first_name"):
@@ -306,14 +337,20 @@ def novas_senhas_turma(request, pk):
     return redirect("escola:cartoes", pk=turma.pk)
 
 
-def _aluno_do_professor(request, pk):
+def _aluno_da_escola(request, pk):
+    """Aluno do escopo da conta (o admin da escola: qualquer um da escola)."""
     return do_escopo_ou_404("alunos", request.user, pk=pk)
+
+
+def _aluno_do_professor(request, pk):
+    """Só aluno de turma em que a conta é o professor designado (desempenho)."""
+    return do_escopo_ou_404("alunos", request.user, pk=pk, turma__professor=request.user.perfil)
 
 
 @require_POST
 @area_da_escola("contas.cadastrar_alunos")
 def aluno_nova_senha(request, pk):
-    perfil = _aluno_do_professor(request, pk)
+    perfil = _aluno_da_escola(request, pk)
     senha = gerar_senha()
     perfil.user.set_password(senha)
     perfil.user.save(update_fields=["password"])
@@ -324,7 +361,7 @@ def aluno_nova_senha(request, pk):
 
 @area_da_escola("contas.cadastrar_alunos")
 def aluno_editar(request, pk):
-    perfil = _aluno_do_professor(request, pk)
+    perfil = _aluno_da_escola(request, pk)
     turma_atual = perfil.turma
     form = EditarAlunoForm(request.POST or None, aluno=perfil, turmas=turmas_visiveis(request.user).filter(ativa=True))
     if request.method == "POST" and form.is_valid():
@@ -341,7 +378,7 @@ def aluno_editar(request, pk):
 @area_da_escola("contas.cadastrar_alunos")
 def aluno_ativo(request, pk):
     """Desativa (o aluno saiu da turma; o histórico fica) ou reativa, dentro do limite de 30."""
-    perfil = _aluno_do_professor(request, pk)
+    perfil = _aluno_da_escola(request, pk)
     usuario = perfil.user
     if usuario.is_active:
         usuario.is_active = False
@@ -362,7 +399,7 @@ def aluno_ativo(request, pk):
 @area_da_escola("contas.cadastrar_alunos")
 def aluno_consentimento(request, pk):
     """Registro do termo de consentimento do responsável (LGPD), recolhido pela escola."""
-    perfil = _aluno_do_professor(request, pk)
+    perfil = _aluno_da_escola(request, pk)
     form = ConsentimentoForm(request.POST or None, instance=None)
     if request.method == "POST" and form.is_valid():
         consentimento = form.save(commit=False)
@@ -377,7 +414,11 @@ def aluno_consentimento(request, pk):
 
 # --------------------------------------------------------------------
 # Etapa 3 (09/11/2026): relatórios por turma e por aluno e lançamento da
-# atividade complementar. Cálculos em relatorios.py.
+# atividade complementar. Cálculos em relatorios.py. Exclusivo do
+# professor, nas turmas designadas a ele (regra de 13/11/2026): a
+# permissão ver_desempenho_turma é só do grupo Professor e, além dela, a
+# turma ou o aluno é buscado só entre os do professor — o admin da escola
+# recebe 403 (sem a permissão) e, se um dia a tiver por engano, 404.
 # --------------------------------------------------------------------
 
 

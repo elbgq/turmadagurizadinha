@@ -1,27 +1,51 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Entrar{% endblock %}
 
 {% block content %}
-<h1>Entrar</h1>
+{# Login em duas colunas sobre uma folha de pergaminho (13/11/2026, pedido #}
+{# da cliente). Estilos em .login-pergaminho no base.css. O <svg> abaixo  #}
+{# define o filtro que deixa as bordas da folha irregulares.              #}
+<svg class="login-pergaminho__filtros" width="0" height="0" aria-hidden="true" focusable="false">
+    <filter id="borda-rasgada">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="7" result="ruido"/>
+        <feDisplacementMap in="SourceGraphic" in2="ruido" scale="14"/>
+    </filter>
+</svg>
 
-<form class="form" method="post" novalidate>
-    {% csrf_token %}
-    {# Aviso de escola com o acesso suspenso (contas/middleware.py, 09/11/2026). #}
-    {% if messages %}
-        <ul class="errorlist">{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
-    {% endif %}
-    {{ form.non_field_errors }}
-    {% for field in form %}
-        <div class="form__campo">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {{ field.errors }}
+<section class="login-pergaminho">
+    <div class="login-pergaminho__coluna">
+        <h1 class="login-pergaminho__frase">Tu queres<br><span>conhecer a...</span></h1>
+        <img class="login-pergaminho__figura"
+             src="{% static 'img/home/turma-personagens.png' %}"
+             alt="Personagens da Turma da Gurizadinha com o logotipo">
+    </div>
+
+    <div class="login-pergaminho__coluna login-pergaminho__coluna--direita">
+        <h2 class="login-pergaminho__frase">Então, te aprochega<br><span>e entre!</span></h2>
+
+        <form class="form" method="post" novalidate>
+            {% csrf_token %}
+            {# Aviso de escola com o acesso suspenso (contas/middleware.py, 09/11/2026). #}
+            {% if messages %}
+                <ul class="errorlist">{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
+            {% endif %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="form__campo">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="btn">Entrar</button>
+        </form>
+
+        <div class="login-pergaminho__links">
+            <p><a href="{% url 'contas:senha_esqueci' %}">Esqueceu a senha?</a></p>
+            <p>Ainda não tem conta? As contas são criadas pela equipe da Turma da Gurizadinha. <a href="{% url 'contas:solicitar_acesso' %}">Solicite seu acesso</a>.</p>
         </div>
-    {% endfor %}
-    <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit" class="btn">Entrar</button>
-</form>
-
-<p><a href="{% url 'contas:senha_esqueci' %}">Esqueceu a senha?</a></p>
-<p>Ainda não tem conta? As contas são criadas pela equipe da Turma da Gurizadinha. <a href="{% url 'contas:solicitar_acesso' %}">Solicite seu acesso</a>.</p>
+    </div>
+</section>
 {% endblock %}

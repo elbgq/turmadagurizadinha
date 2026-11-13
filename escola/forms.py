@@ -112,7 +112,7 @@ class AlunosEmLoteForm(forms.Form):
 
 
 class EditarAlunoForm(forms.Form):
-    """Nome e turma do aluno — o professor pode movê-lo entre as próprias turmas."""
+    """Nome e turma do aluno — o Admin da escola pode movê-lo entre as turmas ativas da escola (13/11/2026)."""
 
     nome = forms.CharField(label="Nome do aluno", max_length=150)
     turma = forms.ModelChoiceField(label="Turma", queryset=Turma.objects.none())

@@ -193,10 +193,11 @@ class Perfil(models.Model):
         verbose_name = "Perfil"
         verbose_name_plural = "Perfis"
         # Permissões das telas da escola (etapa 2), dadas aos grupos de
-        # papel pela migração 0009 — ver contas/papeis.py.
+        # papel pela migração 0009 — ver contas/papeis.py. cadastrar_alunos
+        # passou do Professor para o Admin da escola em 13/11/2026 (0011).
         permissions = [
             ("cadastrar_professores", "Pode cadastrar professores da própria escola"),
-            ("cadastrar_alunos", "Pode cadastrar alunos nas próprias turmas"),
+            ("cadastrar_alunos", "Pode cadastrar alunos nas turmas da própria escola"),
             ("ver_desempenho_turma", "Pode ver o desempenho das próprias turmas"),
         ]
 

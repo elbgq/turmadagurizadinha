@@ -2,36 +2,48 @@
 {% block title %}{{ turma.nome }}{% endblock %}
 
 {% block content %}
-<p><a href="{% url 'escola:turmas' %}">&larr; Minhas turmas</a></p>
+<p><a href="{% url 'escola:turmas' %}">&larr; {% if eh_professor %}Minhas turmas{% else %}Turmas da escola{% endif %}</a></p>
 <h1>{{ turma.nome }} <small>({{ turma.ano_letivo }})</small></h1>
 {% include "escola/_mensagens.html" %}
 
-<p>{{ ativos }} de {{ limite }} alunos ativos.{% if not turma.ativa %} Turma encerrada.{% endif %}</p>
+<p>{{ ativos }} de {{ limite }} alunos ativos.{% if not turma.ativa %} Turma encerrada.{% endif %}
+{% if not eh_professor %} Professor(a): {% if turma.professor %}{{ turma.professor.user.first_name }}{% else %}<em>sem professor(a)</em>{% endif %}.{% endif %}</p>
+{% if eh_professor %}
+    <p><small>O cadastro dos alunos, as senhas e o termo do responsável ficam com a administração da escola.</small></p>
+{% endif %}
 
+{# Cadastro e acesso dos alunos: Admin da escola. Desempenho: só o professor (13/11/2026). #}
 <p class="escola-acoes">
-    {% if ativos < limite %}
+    {% if perms.contas.cadastrar_alunos and ativos < limite %}
         <a class="btn" href="{% url 'escola:aluno_novo' turma.pk %}">+ Aluno</a>
         <a class="btn btn--ghost" href="{% url 'escola:alunos_lote' turma.pk %}">+ Vários alunos (lista)</a>
     {% endif %}
-    <a class="btn btn--ciano" href="{% url 'escola:turma_relatorio' turma.pk %}">Relatório da turma</a>
-    <a class="btn btn--ghost" href="{% url 'escola:atividades_lancar' turma.pk %}">Lançar atividade complementar</a>
-    {% if tem_cartoes %}<a class="btn btn--ciano" href="{% url 'escola:cartoes' turma.pk %}">Cartões gerados agora</a>{% endif %}
+    {% if perms.contas.ver_desempenho_turma %}
+        <a class="btn btn--ciano" href="{% url 'escola:turma_relatorio' turma.pk %}">Relatório da turma</a>
+        <a class="btn btn--ghost" href="{% url 'escola:atividades_lancar' turma.pk %}">Lançar atividade complementar</a>
+    {% endif %}
+    {% if perms.contas.cadastrar_alunos and tem_cartoes %}
+        <a class="btn btn--ciano" href="{% url 'escola:cartoes' turma.pk %}">Cartões gerados agora</a>
+    {% elif ativos %}
+        <a class="btn btn--ghost" href="{% url 'escola:cartoes' turma.pk %}">Cartões de acesso (sem senha)</a>
+    {% endif %}
 </p>
 
 <div class="escola-tabela">
 <table class="tabela-gestao">
-    <thead><tr><th>Aluno</th><th>Usuário</th><th>Termo do responsável</th><th>Situação</th><th>Ações</th></tr></thead>
+    <thead><tr><th>Aluno</th><th>Usuário</th><th>Termo do responsável</th><th>Situação</th>{% if perms.contas.cadastrar_alunos %}<th>Ações</th>{% endif %}</tr></thead>
     <tbody>
         {% for aluno in alunos %}
             <tr>
-                <td><a href="{% url 'escola:aluno_relatorio' aluno.pk %}" title="Ver desempenho">{{ aluno.user.first_name }}</a></td>
+                <td>{% if perms.contas.ver_desempenho_turma %}<a href="{% url 'escola:aluno_relatorio' aluno.pk %}" title="Ver desempenho">{{ aluno.user.first_name }}</a>{% else %}{{ aluno.user.first_name }}{% endif %}</td>
                 <td><code>{{ aluno.user.username }}</code></td>
                 <td>
                     {% with termo=aluno.consentimento_valido %}
-                        {% if termo %}Sim ({{ termo.nome_responsavel }}){% else %}<a href="{% url 'escola:aluno_consentimento' aluno.pk %}">Registrar</a>{% endif %}
+                        {% if termo %}Sim ({{ termo.nome_responsavel }}){% elif perms.contas.cadastrar_alunos %}<a href="{% url 'escola:aluno_consentimento' aluno.pk %}">Registrar</a>{% else %}Não registrado{% endif %}
                     {% endwith %}
                 </td>
                 <td>{% if aluno.user.is_active %}Ativo{% else %}Desativado{% endif %}</td>
+                {% if perms.contas.cadastrar_alunos %}
                 <td class="escola-acoes">
                     <a href="{% url 'escola:aluno_editar' aluno.pk %}">Editar</a>
                     {% if aluno.user.is_active %}
@@ -43,6 +55,7 @@
                         {% csrf_token %}<button type="submit" class="escola-link-botao">{% if aluno.user.is_active %}Desativar{% else %}Reativar{% endif %}</button>
                     </form>
                 </td>
+                {% endif %}
             </tr>
         {% empty %}
             <tr><td colspan="5">Nenhum aluno nesta turma ainda.</td></tr>
@@ -51,7 +64,7 @@
 </table>
 </div>
 
-{% if ativos %}
+{% if perms.contas.cadastrar_alunos and ativos %}
     <form method="post" action="{% url 'escola:novas_senhas_turma' turma.pk %}" class="escola-novas-senhas"
           onsubmit="return confirm('Gerar senhas novas para todos os alunos ativos? As senhas atuais deixam de valer.');">
         {% csrf_token %}

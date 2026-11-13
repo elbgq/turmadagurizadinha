@@ -7,8 +7,9 @@ o resultado é 404 (e não 403), para não revelar que o registro existe.
 
 Papéis:
 - Equipe da plataforma (staff/superusuário): tudo, de todas as escolas.
-- Admin da escola: só os professores e as turmas da própria escola; não
-  vê alunos nem resultados de quiz.
+- Admin da escola: os professores, as turmas e os alunos da própria
+  escola (desde 13/11/2026 é ele quem cadastra os alunos); nunca os
+  resultados de quiz nem outro dado de desempenho.
 - Professor: só as próprias turmas, os alunos delas e os resultados deles
   (com o histórico que o aluno trouxe de turmas anteriores).
 - Aluno e demais: só a própria conta.
@@ -81,11 +82,18 @@ def professores_visiveis(user):
 
 
 def alunos_visiveis(user):
-    """Perfis de aluno que a conta pode ver: o professor, só os das próprias turmas."""
+    """
+    Perfis de aluno que a conta pode ver: o admin da escola, todos os da
+    escola (para cadastrar e cuidar do acesso — 13/11/2026); o professor,
+    só os das próprias turmas. Ver o aluno não é ver o desempenho dele:
+    resultados ficam em resultados_quiz_visiveis, sem o admin da escola.
+    """
     base = Perfil.objects.filter(tipo=Perfil.ALUNO)
     if eh_equipe_plataforma(user):
         return base
     perfil, tipo = _papel(user)
+    if tipo == Perfil.ADMIN_ESCOLA:
+        return base.filter(escola_id=perfil.escola_id)
     if tipo == Perfil.PROFESSOR and perfil.escola_id:
         return base.filter(turma__in=turmas_visiveis(user))
     if tipo == Perfil.ALUNO:
