@@ -1617,6 +1617,42 @@ button.quiz-alternativa:focus-visible {
     min-width: 12rem;
 }
 
+/* Relatório do aluno em quadros (15/11/2026): Quiz e Atividades
+   complementares reaproveitam o quadro da edição de obra (.form__secao)
+   e ganham uma linha de resumo. A largura máxima segura o .container
+   (o body é flex — ver .escola-tabela) e a tabela rola dentro do quadro. */
+.relatorio-quadros {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+@media screen {
+    .relatorio-quadros {
+        max-width: calc(100vw - 4rem);
+    }
+}
+
+.relatorio-quadro__resumo {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.relatorio-quadro .escola-tabela {
+    max-width: 100%;
+    border: 1px solid var(--cor-laranja-apagado);
+    border-radius: 8px;
+}
+
+.relatorio-quadro .tabela-gestao {
+    background: var(--cor-fundo);
+}
+
+.relatorio-quadro .tabela-gestao tbody tr:last-child td {
+    border-bottom: 0;
+}
+
 @media print {
     .escola-cartoes__topo,
     .escola-relatorio__filtro,

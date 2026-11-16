@@ -18,13 +18,16 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
-# Carrega variáveis do arquivo .env (não versionado — ver .env.example) para
-# os.environ. Em produção (Fase 10), as variáveis são definidas diretamente
-# no servidor/hospedagem, sem depender de um arquivo .env.
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Carrega variáveis do arquivo .env (não versionado — ver .env.example) para
+# os.environ. O caminho é o da pasta do projeto (BASE_DIR), e não a pasta de
+# onde o comando foi chamado: no PythonAnywhere, o arquivo WSGI roda a partir
+# de /var/www/, e o .env precisa ser achado do mesmo jeito. Sem o arquivo
+# (hospedagem que define as variáveis no painel), nada acontece. Variáveis já
+# definidas no servidor têm prioridade sobre o .env.
+load_dotenv(BASE_DIR / ".env")
 
 # Pasta dos dados que precisam sobreviver a cada deploy (uploads em media/ e,
 # se não houver DATABASE_URL, o db.sqlite3). Na sua máquina continua sendo a
@@ -155,7 +158,9 @@ WSGI_APPLICATION = "config.wsgi.application"
 #
 # Com DATABASE_URL definida (produção: PostgreSQL, ex.:
 # postgresql://usuario:senha@host:5432/banco), usa esse banco. Sem ela (sua
-# máquina, .env sem DATABASE_URL), continua no SQLite de sempre.
+# máquina, ou o servidor de teste no PythonAnywhere), usa o SQLite em
+# DATA_DIR/db.sqlite3 — por padrão, a pasta do projeto (BASE_DIR). O caminho
+# é montado pelo pathlib, então serve tanto no Windows quanto no Linux.
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{(DATA_DIR / 'db.sqlite3').as_posix()}",
@@ -163,7 +168,6 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

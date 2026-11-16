@@ -616,6 +616,25 @@ class TelasDoRelatorioTests(RelatoriosMixin, TestCase):
         self.assertContains(resposta, "Caprichou")
         self.assertContains(resposta, "8,5")
 
+    def test_relatorio_do_aluno_em_quadros_com_resumo(self):
+        self.jogar(self.aluno_a, 1)  # 50%
+        self.jogar(self.aluno_a, 2)  # 100%
+        self.jogar(self.aluno_a, 1, obra=self.outra_obra)
+        EntregaAtividade.objects.create(aluno=self.aluno_a.perfil, obra=self.obra, situacao=EntregaAtividade.ENTREGUE)
+        EntregaAtividade.objects.create(aluno=self.aluno_a.perfil, obra=self.outra_obra, situacao=EntregaAtividade.NAO_ENTREGUE)
+        historico = relatorios.historico_do_aluno(self.aluno_a.perfil)
+        self.assertEqual(historico["resumo_quiz"], {"tentativas": 3, "obras": 2, "melhor": 100})
+        self.assertEqual(historico["resumo_atividades"], {"entregues": 1, "nao_entregues": 1})
+        resposta = self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk]))
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Quiz</legend>', html=False)
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Atividades complementares</legend>', html=False)
+        self.assertContains(resposta, "melhor resultado <strong>100%</strong>")
+
+    def test_relatorio_do_aluno_sem_historico_nao_mostra_resumo(self):
+        resposta = self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a3.perfil.pk]))
+        self.assertContains(resposta, "Ainda não fez nenhum quiz.")
+        self.assertNotContains(resposta, "relatorio-quadro__resumo")
+
     def test_isolamento_dos_relatorios(self):
         self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_a2.pk])).status_code, 404)
         self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_b.pk])).status_code, 404)

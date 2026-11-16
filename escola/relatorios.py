@@ -107,11 +107,24 @@ def detalhe_da_obra(alunos, obra):
 
 
 def historico_do_aluno(aluno):
-    """Todas as tentativas de quiz e entregas do aluno, de todas as turmas por onde passou."""
+    """
+    Todas as tentativas de quiz e entregas do aluno, de todas as turmas por
+    onde passou, com um resumo de cada parte para o topo dos quadros do
+    relatório (15/11/2026).
+    """
+    resultados = list(
+        ResultadoQuiz.objects.filter(perfil=aluno)
+        .select_related("obra", "turma").prefetch_related("respostas").order_by("-criado_em")
+    )
+    entregas = list(EntregaAtividade.objects.filter(aluno=aluno).select_related("obra", "turma"))
+    entregues = sum(1 for e in entregas if e.situacao == EntregaAtividade.ENTREGUE)
     return {
-        "resultados": (
-            ResultadoQuiz.objects.filter(perfil=aluno)
-            .select_related("obra", "turma").prefetch_related("respostas").order_by("-criado_em")
-        ),
-        "entregas": EntregaAtividade.objects.filter(aluno=aluno).select_related("obra", "turma"),
+        "resultados": resultados,
+        "entregas": entregas,
+        "resumo_quiz": {
+            "tentativas": len(resultados),
+            "obras": len({r.obra_id for r in resultados}),
+            "melhor": max((r.porcentagem for r in resultados), default=None),
+        },
+        "resumo_atividades": {"entregues": entregues, "nao_entregues": len(entregas) - entregues},
     }

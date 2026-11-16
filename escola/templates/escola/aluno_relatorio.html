@@ -7,54 +7,76 @@
 <p>Usuário <code>{{ aluno.user.username }}</code>. Histórico completo, inclusive de turmas anteriores.
     <button type="button" class="btn btn--ghost btn--pequeno relatorio__imprimir" onclick="window.print()">Imprimir</button></p>
 
-<h2>Quiz</h2>
-<div class="escola-tabela">
-<table class="tabela-gestao">
-    <thead><tr><th>Data</th><th>Obra</th><th>Turma na época</th><th>Acertos</th><th>%</th><th>Tempo</th></tr></thead>
-    <tbody>
-        {% for resultado in resultados %}
-            <tr>
-                <td>{{ resultado.criado_em|date:"d/m/Y H:i" }}</td>
-                <td>{{ resultado.obra.titulo }}</td>
-                <td>{{ resultado.turma.nome|default:"—" }}</td>
-                <td>{{ resultado.pontuacao }} de {{ resultado.total }}</td>
-                <td>{{ resultado.porcentagem }}%</td>
-                <td>{{ resultado.tempo_formatado }}</td>
-            </tr>
-            {% if resultado.respostas.all %}
-                <tr class="quiz-relatorio__detalhe">
-                    <td colspan="6">
-                        <details>
-                            <summary>Ver pergunta por pergunta</summary>
-                            {% with respostas=resultado.respostas.all %}{% include "quiz/_respostas_tabela.html" %}{% endwith %}
-                        </details>
-                    </td>
+{# Quiz e Atividades complementares em quadros separados, no mesmo #}
+{# estilo dos quadros da edição de obra (.form__secao) — pedido do Eloi #}
+{# em 15/11/2026. Cada quadro abre com uma linha de resumo. #}
+<div class="relatorio-quadros">
+<fieldset class="form__secao relatorio-quadro">
+    <legend class="form__secao-titulo">Quiz</legend>
+    {% if resumo_quiz.tentativas %}
+        <p class="relatorio-quadro__resumo">
+            <strong>{{ resumo_quiz.tentativas }}</strong> tentativa{{ resumo_quiz.tentativas|pluralize }}
+            em <strong>{{ resumo_quiz.obras }}</strong> obra{{ resumo_quiz.obras|pluralize }}
+            &middot; melhor resultado <strong>{{ resumo_quiz.melhor }}%</strong>
+        </p>
+    {% endif %}
+    <div class="escola-tabela">
+    <table class="tabela-gestao">
+        <thead><tr><th>Data</th><th>Obra</th><th>Turma na época</th><th>Acertos</th><th>%</th><th>Tempo</th></tr></thead>
+        <tbody>
+            {% for resultado in resultados %}
+                <tr>
+                    <td>{{ resultado.criado_em|date:"d/m/Y H:i" }}</td>
+                    <td>{{ resultado.obra.titulo }}</td>
+                    <td>{{ resultado.turma.nome|default:"—" }}</td>
+                    <td>{{ resultado.pontuacao }} de {{ resultado.total }}</td>
+                    <td>{{ resultado.porcentagem }}%</td>
+                    <td>{{ resultado.tempo_formatado }}</td>
                 </tr>
-            {% endif %}
-        {% empty %}
-            <tr><td colspan="6">Ainda não fez nenhum quiz.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
+                {% if resultado.respostas.all %}
+                    <tr class="quiz-relatorio__detalhe">
+                        <td colspan="6">
+                            <details>
+                                <summary>Ver pergunta por pergunta</summary>
+                                {% with respostas=resultado.respostas.all %}{% include "quiz/_respostas_tabela.html" %}{% endwith %}
+                            </details>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% empty %}
+                <tr><td colspan="6">Ainda não fez nenhum quiz.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</fieldset>
 
-<h2>Atividade complementar</h2>
-<div class="escola-tabela">
-<table class="tabela-gestao">
-    <thead><tr><th>Obra</th><th>Turma na época</th><th>Situação</th><th>Nota</th><th>Observação</th></tr></thead>
-    <tbody>
-        {% for entrega in entregas %}
-            <tr>
-                <td>{{ entrega.obra.titulo }}</td>
-                <td>{{ entrega.turma.nome|default:"—" }}</td>
-                <td>{{ entrega.get_situacao_display }}</td>
-                <td>{{ entrega.nota|default_if_none:"—" }}</td>
-                <td>{{ entrega.observacao }}</td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="5">Nenhuma atividade lançada ainda.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<fieldset class="form__secao relatorio-quadro">
+    <legend class="form__secao-titulo">Atividades complementares</legend>
+    {% if entregas %}
+        <p class="relatorio-quadro__resumo">
+            <strong>{{ resumo_atividades.entregues }}</strong> entregue{{ resumo_atividades.entregues|pluralize }}
+            &middot; <strong>{{ resumo_atividades.nao_entregues }}</strong> não entregue{{ resumo_atividades.nao_entregues|pluralize }}
+        </p>
+    {% endif %}
+    <div class="escola-tabela">
+    <table class="tabela-gestao">
+        <thead><tr><th>Obra</th><th>Turma na época</th><th>Situação</th><th>Nota</th><th>Observação</th></tr></thead>
+        <tbody>
+            {% for entrega in entregas %}
+                <tr>
+                    <td>{{ entrega.obra.titulo }}</td>
+                    <td>{{ entrega.turma.nome|default:"—" }}</td>
+                    <td>{{ entrega.get_situacao_display }}</td>
+                    <td>{{ entrega.nota|default_if_none:"—" }}</td>
+                    <td>{{ entrega.observacao }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">Nenhuma atividade lançada ainda.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</fieldset>
 </div>
 {% endblock %}
