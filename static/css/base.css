@@ -1617,11 +1617,12 @@ button.quiz-alternativa:focus-visible {
     min-width: 12rem;
 }
 
-/* Relatório do aluno em quadros (15/11/2026): Quiz e Atividades
-   complementares reaproveitam o quadro da edição de obra (.form__secao)
-   e ganham uma linha de resumo. A largura máxima segura o .container
+/* Telas da área da escola em quadros (relatório do aluno em 15/11/2026;
+   Minhas turmas, Turma, Relatório da turma e Lançar atividade em
+   16/11/2026): reaproveitam o quadro da edição de obra (.form__secao),
+   com um texto curto no topo. A largura máxima segura o .container
    (o body é flex — ver .escola-tabela) e a tabela rola dentro do quadro. */
-.relatorio-quadros {
+.escola-quadros {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -1629,27 +1630,34 @@ button.quiz-alternativa:focus-visible {
 }
 
 @media screen {
-    .relatorio-quadros {
+    .escola-quadros {
         max-width: calc(100vw - 4rem);
     }
 }
 
-.relatorio-quadro__resumo {
+.escola-quadro__resumo {
     margin: 0;
     font-size: 0.95rem;
 }
 
-.relatorio-quadro .escola-tabela {
+/* Dentro do quadro o espaçamento vem do gap do .form__secao. */
+.escola-quadro > p,
+.escola-quadro > ul,
+.escola-quadro > form {
+    margin: 0;
+}
+
+.escola-quadro .escola-tabela {
     max-width: 100%;
     border: 1px solid var(--cor-laranja-apagado);
     border-radius: 8px;
 }
 
-.relatorio-quadro .tabela-gestao {
+.escola-quadro .tabela-gestao {
     background: var(--cor-fundo);
 }
 
-.relatorio-quadro .tabela-gestao tbody tr:last-child td {
+.escola-quadro .tabela-gestao tbody tr:last-child td {
     border-bottom: 0;
 }
 

@@ -10,11 +10,11 @@
 {# Quiz e Atividades complementares em quadros separados, no mesmo #}
 {# estilo dos quadros da edição de obra (.form__secao) — pedido do Eloi #}
 {# em 15/11/2026. Cada quadro abre com uma linha de resumo. #}
-<div class="relatorio-quadros">
-<fieldset class="form__secao relatorio-quadro">
+<div class="escola-quadros">
+<fieldset class="form__secao escola-quadro">
     <legend class="form__secao-titulo">Quiz</legend>
     {% if resumo_quiz.tentativas %}
-        <p class="relatorio-quadro__resumo">
+        <p class="escola-quadro__resumo">
             <strong>{{ resumo_quiz.tentativas }}</strong> tentativa{{ resumo_quiz.tentativas|pluralize }}
             em <strong>{{ resumo_quiz.obras }}</strong> obra{{ resumo_quiz.obras|pluralize }}
             &middot; melhor resultado <strong>{{ resumo_quiz.melhor }}%</strong>
@@ -51,10 +51,10 @@
     </div>
 </fieldset>
 
-<fieldset class="form__secao relatorio-quadro">
+<fieldset class="form__secao escola-quadro">
     <legend class="form__secao-titulo">Atividades complementares</legend>
     {% if entregas %}
-        <p class="relatorio-quadro__resumo">
+        <p class="escola-quadro__resumo">
             <strong>{{ resumo_atividades.entregues }}</strong> entregue{{ resumo_atividades.entregues|pluralize }}
             &middot; <strong>{{ resumo_atividades.nao_entregues }}</strong> não entregue{{ resumo_atividades.nao_entregues|pluralize }}
         </p>

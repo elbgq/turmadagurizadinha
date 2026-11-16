@@ -6,32 +6,38 @@
 <h1>{% if eh_professor %}Minhas turmas{% else %}Turmas da escola{% endif %}</h1>
 {% include "escola/_mensagens.html" %}
 
-{% if pode_editar %}
-    <p>Crie as turmas e designe o professor(a) de cada uma. Abra a turma para cadastrar os alunos, gerar as senhas, imprimir os cartões de acesso e registrar o termo do responsável. Cada turma tem até {{ limite }} alunos.</p>
-    <p><a class="btn" href="{% url 'escola:turma_nova' %}">+ Nova turma</a></p>
-{% elif eh_professor %}
-    <p>Aqui aparecem as turmas em que você foi designado(a). As turmas e o cadastro dos alunos ficam com a administração da escola.</p>
-{% endif %}
+{# Conteúdo em quadro, no estilo da edição de obra (16/11/2026). #}
+<div class="escola-quadros">
+<fieldset class="form__secao escola-quadro">
+    <legend class="form__secao-titulo">Turmas</legend>
+    {% if pode_editar %}
+        <p class="escola-quadro__resumo">Crie as turmas e designe o professor(a) de cada uma. Abra a turma para cadastrar os alunos, gerar as senhas, imprimir os cartões de acesso e registrar o termo do responsável. Cada turma tem até {{ limite }} alunos.</p>
+        <p class="escola-acoes"><a class="btn" href="{% url 'escola:turma_nova' %}">+ Nova turma</a></p>
+    {% elif eh_professor %}
+        <p class="escola-quadro__resumo">Aqui aparecem as turmas em que você foi designado(a). As turmas e o cadastro dos alunos ficam com a administração da escola.</p>
+    {% endif %}
 
-<div class="escola-tabela">
-<table class="tabela-gestao">
-    <thead>
-        <tr><th>Turma</th><th>Ano letivo</th>{% if not eh_professor %}<th>Professor(a)</th>{% endif %}<th>Alunos</th><th>Situação</th>{% if pode_editar %}<th>Ações</th>{% endif %}</tr>
-    </thead>
-    <tbody>
-        {% for turma in turmas %}
-            <tr>
-                <td><a href="{% url 'escola:turma' turma.pk %}">{{ turma.nome }}</a></td>
-                <td>{{ turma.ano_letivo }}</td>
-                {% if not eh_professor %}<td>{% if turma.professor %}{{ turma.professor.user.first_name }}{% else %}<em>sem professor(a)</em>{% endif %}</td>{% endif %}
-                <td>{{ turma.alunos_ativos.count }} / {{ limite }}</td>
-                <td>{% if turma.ativa %}Ativa{% else %}Encerrada{% endif %}</td>
-                {% if pode_editar %}<td><a href="{% url 'escola:turma_editar' turma.pk %}">Editar</a></td>{% endif %}
-            </tr>
-        {% empty %}
-            <tr><td colspan="6">Nenhuma turma ainda.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="escola-tabela">
+    <table class="tabela-gestao">
+        <thead>
+            <tr><th>Turma</th><th>Ano letivo</th>{% if not eh_professor %}<th>Professor(a)</th>{% endif %}<th>Alunos</th><th>Situação</th>{% if pode_editar %}<th>Ações</th>{% endif %}</tr>
+        </thead>
+        <tbody>
+            {% for turma in turmas %}
+                <tr>
+                    <td><a href="{% url 'escola:turma' turma.pk %}">{{ turma.nome }}</a></td>
+                    <td>{{ turma.ano_letivo }}</td>
+                    {% if not eh_professor %}<td>{% if turma.professor %}{{ turma.professor.user.first_name }}{% else %}<em>sem professor(a)</em>{% endif %}</td>{% endif %}
+                    <td>{{ turma.alunos_ativos.count }} / {{ limite }}</td>
+                    <td>{% if turma.ativa %}Ativa{% else %}Encerrada{% endif %}</td>
+                    {% if pode_editar %}<td><a href="{% url 'escola:turma_editar' turma.pk %}">Editar</a></td>{% endif %}
+                </tr>
+            {% empty %}
+                <tr><td colspan="6">Nenhuma turma ainda.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</fieldset>
 </div>
 {% endblock %}

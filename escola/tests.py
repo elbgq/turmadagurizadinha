@@ -633,7 +633,32 @@ class TelasDoRelatorioTests(RelatoriosMixin, TestCase):
     def test_relatorio_do_aluno_sem_historico_nao_mostra_resumo(self):
         resposta = self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a3.perfil.pk]))
         self.assertContains(resposta, "Ainda não fez nenhum quiz.")
-        self.assertNotContains(resposta, "relatorio-quadro__resumo")
+        self.assertNotContains(resposta, "escola-quadro__resumo")
+
+    def test_telas_do_professor_em_quadros(self):
+        """16/11/2026: as telas do professor mostram o conteúdo em quadros (.form__secao)."""
+        self.jogar(self.aluno_a, 1, respostas=[("P1?", True)])
+        turma = self.turma_a.pk
+        telas = [
+            (reverse("escola:turmas"), ["Turmas"]),
+            (reverse("escola:turma", args=[turma]), ["Acompanhamento", "Alunos"]),
+            (reverse("escola:turma_relatorio", args=[turma]), ["Resumo por obra"]),
+            (reverse("escola:turma_relatorio", args=[turma]) + "?obra=lenda", ["Por aluno", "Acertos por pergunta"]),
+            (reverse("escola:atividades_lancar", args=[turma]), ["Escolha a obra"]),
+            (reverse("escola:atividades_lancar", args=[turma]) + "?obra=lenda", ["Lançamentos da turma 3º ano A"]),
+        ]
+        for url, quadros in telas:
+            with self.subTest(url=url):
+                resposta = self.client.get(url)
+                self.assertContains(resposta, 'class="escola-quadros"')
+                for titulo in quadros:
+                    self.assertContains(resposta, f'<legend class="form__secao-titulo">{titulo}</legend>', html=False)
+
+    def test_admin_da_escola_nao_ve_quadro_de_acompanhamento(self):
+        self.client.force_login(self.admin_a)
+        resposta = self.client.get(reverse("escola:turma", args=[self.turma_a.pk]))
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Alunos</legend>', html=False)
+        self.assertNotContains(resposta, "Acompanhamento")
 
     def test_isolamento_dos_relatorios(self):
         self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_a2.pk])).status_code, 404)
