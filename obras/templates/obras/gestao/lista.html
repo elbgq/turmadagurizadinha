@@ -3,13 +3,26 @@
 
 {% block content %}
 <h1>Gerenciar obras</h1>
-{% if perms.obras.add_obra %}
-    <p><a class="btn" href="{% url 'obras:obra_nova' %}">+ Nova obra</a></p>
-{% endif %}
+
+{# Conteúdo em quadros, no estilo da edição de obra (17/11/2026). #}
+<div class="escola-quadros">
+<fieldset class="form__secao escola-quadro">
+    <legend class="form__secao-titulo">Obras</legend>
+    {% if perms.obras.add_obra %}
+        <p class="escola-acoes"><a class="btn" href="{% url 'obras:obra_nova' %}">+ Nova obra</a></p>
+    {% endif %}
+
+    {% include "obras/_busca_obras.html" %}
+
+    <div class="escola-tabela">
+        {% include "obras/_tabela_obras.html" %}
+    </div>
+</fieldset>
 
 {% if perms.obras.change_paginaquemsomos or perms.obras.change_paginaaturminha %}
+<fieldset class="form__secao escola-quadro">
+    <legend class="form__secao-titulo">Conteúdo institucional</legend>
     <p class="gestao-paginas-institucionais">
-        Conteúdo institucional:
         {% if perms.obras.change_paginaquemsomos %}
             <a href="{% url 'obras:quem_somos_editar' %}">Editar "Quem somos"</a>
         {% endif %}
@@ -18,9 +31,7 @@
             <a href="{% url 'obras:a_turminha_editar' %}">Editar "A Turminha"</a>
         {% endif %}
     </p>
+</fieldset>
 {% endif %}
-
-{% include "obras/_busca_obras.html" %}
-
-{% include "obras/_tabela_obras.html" %}
+</div>
 {% endblock %}

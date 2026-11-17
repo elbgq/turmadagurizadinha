@@ -10,8 +10,9 @@
     {% csrf_token %}
     {{ form.non_field_errors }}
 
-    <fieldset class="form__secao-institucional">
-        <legend>História do Clube</legend>
+    {# Quadros no estilo da edição de obra (17/11/2026, pedido do Eloi). #}
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">História do Clube</legend>
         <div class="form__campo">
             <label for="{{ form.historia_texto.id_for_label }}">Texto</label>
             {{ form.historia_texto }}
@@ -25,8 +26,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form__secao-institucional">
-        <legend>Missão</legend>
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Missão</legend>
         <div class="form__campo">
             <label for="{{ form.missao_texto.id_for_label }}">Texto</label>
             {{ form.missao_texto }}
@@ -40,8 +41,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form__secao-institucional">
-        <legend>Visão</legend>
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Visão</legend>
         <div class="form__campo">
             <label for="{{ form.visao_texto.id_for_label }}">Texto</label>
             {{ form.visao_texto }}
@@ -55,8 +56,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form__secao-institucional">
-        <legend>Valores</legend>
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Valores</legend>
         <div class="form__campo">
             <label for="{{ form.valores_imagem.id_for_label }}">Imagem da seção</label>
             {% if form.instance.valores_imagem %}<p><small>Atual: {{ form.instance.valores_imagem.name }}</small></p>{% endif %}
@@ -64,7 +65,7 @@
             {{ form.valores_imagem.errors }}
         </div>
 
-        <p>Cada valor abaixo vira um item na lista da página. Use "Ordem" para definir a sequência; marque "Excluir" para remover um valor.</p>
+        <p class="form__secao-ajuda">Cada valor abaixo vira um item na lista da página. Use "Ordem" para definir a sequência; marque "Excluir" para remover um valor.</p>
         {{ formset.management_form }}
         {% for valor_form in formset %}
             <fieldset class="form__questao">

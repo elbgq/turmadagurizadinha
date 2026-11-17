@@ -6,36 +6,42 @@
 <h1>Professores</h1>
 {% include "escola/_mensagens.html" %}
 
-<p>{{ ativos }} de {{ escola.limite_professores }} professores ativos no plano da escola.
-{% if escola.contrato_fim %}Contrato até {{ escola.contrato_fim|date:"d/m/Y" }}.{% endif %}</p>
+{# Conteúdo em quadro, no estilo da edição de obra (17/11/2026). #}
+<div class="escola-quadros">
+<fieldset class="form__secao escola-quadro">
+    <legend class="form__secao-titulo">Professores</legend>
+    <p class="escola-quadro__resumo">{{ ativos }} de {{ escola.limite_professores }} professores ativos no plano da escola.
+    {% if escola.contrato_fim %}Contrato até {{ escola.contrato_fim|date:"d/m/Y" }}.{% endif %}</p>
 
-{% if ativos < escola.limite_professores %}
-    <p><a class="btn" href="{% url 'escola:professor_novo' %}">+ Cadastrar professor(a)</a></p>
-{% else %}
-    <p class="mensagem mensagem--erro">Limite do plano atingido. Para cadastrar mais professores, desative um ou fale com a equipe da Turma da Gurizadinha.</p>
-{% endif %}
+    {% if ativos < escola.limite_professores %}
+        <p class="escola-acoes"><a class="btn" href="{% url 'escola:professor_novo' %}">+ Cadastrar professor(a)</a></p>
+    {% else %}
+        <p class="mensagem mensagem--erro">Limite do plano atingido. Para cadastrar mais professores, desative um ou fale com a equipe da Turma da Gurizadinha.</p>
+    {% endif %}
 
-<div class="escola-tabela">
-<table class="tabela-gestao">
-    <thead><tr><th>Nome</th><th>E-mail</th><th>Situação</th><th>Ações</th></tr></thead>
-    <tbody>
-        {% for professor in professores %}
-            <tr>
-                <td>{{ professor.user.first_name }}</td>
-                <td>{{ professor.user.email }}</td>
-                <td>{% if professor.user.is_active %}Ativo{% else %}Desativado{% endif %}</td>
-                <td class="escola-acoes">
-                    <a href="{% url 'escola:professor_editar' professor.pk %}">Editar</a>
-                    <form method="post" action="{% url 'escola:professor_ativo' professor.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="escola-link-botao">{% if professor.user.is_active %}Desativar{% else %}Reativar{% endif %}</button>
-                    </form>
-                </td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="4">Nenhum professor cadastrado ainda.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="escola-tabela">
+    <table class="tabela-gestao">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Situação</th><th>Ações</th></tr></thead>
+        <tbody>
+            {% for professor in professores %}
+                <tr>
+                    <td>{{ professor.user.first_name }}</td>
+                    <td>{{ professor.user.email }}</td>
+                    <td>{% if professor.user.is_active %}Ativo{% else %}Desativado{% endif %}</td>
+                    <td class="escola-acoes">
+                        <a href="{% url 'escola:professor_editar' professor.pk %}">Editar</a>
+                        <form method="post" action="{% url 'escola:professor_ativo' professor.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="escola-link-botao">{% if professor.user.is_active %}Desativar{% else %}Reativar{% endif %}</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Nenhum professor cadastrado ainda.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</fieldset>
 </div>
 {% endblock %}

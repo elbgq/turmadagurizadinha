@@ -282,26 +282,6 @@ a:hover {
     max-width: 600px;
 }
 
-/* Edição do conteúdo institucional (Quem somos / A Turminha) —
-   acréscimo de 29/09/2026. Cada <fieldset> agrupa uma seção da
-   página (História, Missão, Visão, Valores...); mesmo visual dos
-   cartões de pergunta (.form__questao) para ficar consistente. */
-.form__secao-institucional {
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0 0 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-}
-
-.form__secao-institucional legend {
-    font-weight: bold;
-    padding: 0 0.4rem;
-    color: var(--cor-secundaria);
-}
-
 /* Link para as telas de "Quem somos"/"A Turminha" na lista de gestão
    de obras (obras/templates/obras/gestao/lista.html). */
 .gestao-paginas-institucionais {
@@ -1486,7 +1466,10 @@ button.quiz-alternativa:focus-visible {
    para os lados; com 100% ela acompanha a largura do quadro. */
 .form--obra .form__campo textarea,
 .form--obra .form__campo select,
-.form--obra .form__campo input:not([type="checkbox"]):not([type="radio"]) {
+.form--obra .form__campo input:not([type="checkbox"]):not([type="radio"]),
+.form--pagina-institucional .form__campo textarea,
+.form--pagina-institucional .form__campo select,
+.form--pagina-institucional .form__campo input:not([type="checkbox"]):not([type="radio"]) {
     width: 100%;
 }
 
@@ -1619,7 +1602,7 @@ button.quiz-alternativa:focus-visible {
 
 /* Telas da área da escola em quadros (relatório do aluno em 15/11/2026;
    Minhas turmas, Turma, Relatório da turma e Lançar atividade em
-   16/11/2026): reaproveitam o quadro da edição de obra (.form__secao),
+   16/11/2026; Professores e Gerenciar obras em 17/11/2026): reaproveitam o quadro da edição de obra (.form__secao),
    com um texto curto no topo. A largura máxima segura o .container
    (o body é flex — ver .escola-tabela) e a tabela rola dentro do quadro. */
 .escola-quadros {

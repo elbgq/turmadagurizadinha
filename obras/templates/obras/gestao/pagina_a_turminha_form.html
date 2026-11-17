@@ -10,8 +10,9 @@
     {% csrf_token %}
     {{ form.non_field_errors }}
 
-    <fieldset class="form__secao-institucional">
-        <legend>Introdução</legend>
+    {# Quadros no estilo da edição de obra (17/11/2026, pedido do Eloi). #}
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Introdução</legend>
         <div class="form__campo">
             <label for="{{ form.texto_introducao.id_for_label }}">Texto</label>
             {{ form.texto_introducao }}
@@ -25,9 +26,9 @@
         </div>
     </fieldset>
 
-    <fieldset class="form__secao-institucional">
-        <legend>Personagens</legend>
-        <p>Cada personagem abaixo vira um card na página. Use "Ordem" para definir a sequência; marque "Excluir" para remover um personagem.</p>
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Personagens</legend>
+        <p class="form__secao-ajuda">Cada personagem abaixo vira um card na página. Use "Ordem" para definir a sequência; marque "Excluir" para remover um personagem.</p>
         {{ formset.management_form }}
         {% for personagem_form in formset %}
             <fieldset class="form__questao">

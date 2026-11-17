@@ -843,3 +843,35 @@ class FormularioObraEmQuadrosTests(TestCase):
         inicio = html.index(">Atividades de apoio</legend>")
         self.assertLess(inicio, html.index('name="atividade_pdf"'))
         self.assertLess(html.index('name="atividade_pdf"'), html.index(">Perguntas</h3>"))
+
+
+class TelasDaEquipeEditorialEmQuadrosTests(TestCase):
+    """17/11/2026: Gerenciar obras, "Quem somos" e "A Turminha" em quadros (.form__secao)."""
+
+    def setUp(self):
+        editor = User.objects.create_user("editor-quadros-institucional", password="senha-teste-123")
+        editor.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label="obras",
+            codename__in=["view_obra", "add_obra", "change_obra", "change_paginaquemsomos", "change_paginaaturminha"],
+        ))
+        self.client.force_login(editor)
+
+    def _confere_quadros(self, url, titulos):
+        resposta = self.client.get(url)
+        self.assertEqual(resposta.status_code, 200)
+        for titulo in titulos:
+            self.assertContains(resposta, f'<legend class="form__secao-titulo">{titulo}</legend>', html=False)
+        self.assertNotContains(resposta, "form__secao-institucional")
+        return resposta
+
+    def test_gerenciar_obras_em_quadros(self):
+        Obra.objects.create(titulo="Obra em quadro", slug="obra-em-quadro")
+        resposta = self._confere_quadros(reverse("obras:obra_lista"), ["Obras", "Conteúdo institucional"])
+        self.assertContains(resposta, "Obra em quadro")
+        self.assertContains(resposta, reverse("obras:quem_somos_editar"))
+
+    def test_quem_somos_em_quadros(self):
+        self._confere_quadros(reverse("obras:quem_somos_editar"), ["História do Clube", "Missão", "Visão", "Valores"])
+
+    def test_a_turminha_em_quadros(self):
+        self._confere_quadros(reverse("obras:a_turminha_editar"), ["Introdução", "Personagens"])

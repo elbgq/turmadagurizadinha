@@ -660,6 +660,14 @@ class TelasDoRelatorioTests(RelatoriosMixin, TestCase):
         self.assertContains(resposta, '<legend class="form__secao-titulo">Alunos</legend>', html=False)
         self.assertNotContains(resposta, "Acompanhamento")
 
+    def test_professores_do_admin_da_escola_em_quadro(self):
+        """17/11/2026: a tela Professores do Admin da escola também fica em quadro."""
+        self.client.force_login(self.admin_a)
+        resposta = self.client.get(reverse("escola:professores"))
+        self.assertContains(resposta, 'class="escola-quadros"')
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Professores</legend>', html=False)
+        self.assertContains(resposta, self.prof_a.email)
+
     def test_isolamento_dos_relatorios(self):
         self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_a2.pk])).status_code, 404)
         self.assertEqual(self.client.get(reverse("escola:turma_relatorio", args=[self.turma_b.pk])).status_code, 404)
