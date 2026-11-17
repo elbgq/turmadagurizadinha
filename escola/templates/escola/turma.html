@@ -15,10 +15,16 @@
 {% if perms.contas.ver_desempenho_turma %}
 <fieldset class="form__secao escola-quadro">
     <legend class="form__secao-titulo">Acompanhamento</legend>
-    <p class="escola-quadro__resumo">Desempenho no quiz e lançamento das atividades impressas.</p>
+    {% if turma.ativa %}
+        <p class="escola-quadro__resumo">Desempenho no quiz e lançamento das atividades impressas.</p>
+    {% else %}
+        <p class="escola-quadro__resumo">Turma encerrada: só consulta. Os relatórios continuam disponíveis, mas não dá para lançar atividades.</p>
+    {% endif %}
     <p class="escola-acoes">
         <a class="btn btn--ciano" href="{% url 'escola:turma_relatorio' turma.pk %}">Relatório da turma</a>
-        <a class="btn btn--ghost" href="{% url 'escola:atividades_lancar' turma.pk %}">Lançar atividade complementar</a>
+        {% if turma.ativa %}
+            <a class="btn btn--ghost" href="{% url 'escola:atividades_lancar' turma.pk %}">Lançar atividade complementar</a>
+        {% endif %}
     </p>
 </fieldset>
 {% endif %}

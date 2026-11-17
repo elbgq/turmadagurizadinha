@@ -29,7 +29,7 @@
                     <td>{{ turma.ano_letivo }}</td>
                     {% if not eh_professor %}<td>{% if turma.professor %}{{ turma.professor.user.first_name }}{% else %}<em>sem professor(a)</em>{% endif %}</td>{% endif %}
                     <td>{{ turma.alunos_ativos.count }} / {{ limite }}</td>
-                    <td>{% if turma.ativa %}Ativa{% else %}Encerrada{% endif %}</td>
+                    <td>{% if turma.ativa %}Ativa{% else %}Inativa{% endif %}</td>
                     {% if pode_editar %}<td><a href="{% url 'escola:turma_editar' turma.pk %}">Editar</a></td>{% endif %}
                 </tr>
             {% empty %}

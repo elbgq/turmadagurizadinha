@@ -457,8 +457,19 @@ def atividades_lancar(request, pk):
     Lançamento da atividade complementar de uma obra para a turma toda, numa
     tela só: situação (entregou / não entregou), nota opcional e observação
     por aluno. Situação em branco apaga o lançamento que existia.
+
+    Turma encerrada fica só para consulta (17/11/2026): nem a tela nem o
+    POST de lançamento funcionam, mesmo por link direto — volta ao
+    relatório da turma com um aviso.
     """
     turma = _turma_do_professor(request, pk)
+    if not turma.ativa:
+        messages.warning(
+            request,
+            f"A turma {turma.nome} está encerrada: dá para consultar os relatórios, "
+            "mas não para lançar atividades.",
+        )
+        return redirect("escola:turma_relatorio", pk=turma.pk)
     obras = relatorios.obras_do_relatorio()
     obra = _obra_escolhida(request, obras)
     if obra is None:

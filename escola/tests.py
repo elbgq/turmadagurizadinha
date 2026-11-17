@@ -715,6 +715,40 @@ class TelasDoRelatorioTests(RelatoriosMixin, TestCase):
         resposta = self.client.get(reverse("escola:atividades_lancar", args=[self.turma_a.pk]), {"obra": "rascunho"})
         self.assertNotContains(resposta, "aluno.a3")
 
+    def test_turma_encerrada_fica_so_para_consulta(self):
+        """17/11/2026: turma encerrada — o professor consulta, mas não lança atividade."""
+        self.turma_a.ativa = False
+        self.turma_a.save()
+        turma = self.turma_a.pk
+        url_lancar = reverse("escola:atividades_lancar", args=[turma])
+        url_relatorio = reverse("escola:turma_relatorio", args=[turma])
+
+        resposta = self.client.get(reverse("escola:turma", args=[turma]))
+        self.assertContains(resposta, "aluno.a3")
+        self.assertContains(resposta, url_relatorio)
+        self.assertNotContains(resposta, url_lancar)
+        self.assertContains(resposta, "Turma encerrada: só consulta.")
+        self.assertEqual(self.client.get(reverse("escola:aluno_relatorio", args=[self.aluno_a.perfil.pk])).status_code, 200)
+        resposta = self.client.get(url_relatorio, {"obra": "lenda"})
+        self.assertEqual(resposta.status_code, 200)
+        self.assertNotContains(resposta, url_lancar)
+
+        # Link direto: GET e POST voltam ao relatório com aviso e não gravam nada.
+        for resposta in (
+            self.client.get(url_lancar),
+            self.client.get(url_lancar + "?obra=lenda"),
+            self.client.post(url_lancar + "?obra=lenda", self._dados(**{"aluno.a": ("entregue", "9", "")})),
+        ):
+            self.assertRedirects(resposta, url_relatorio)
+        self.assertFalse(EntregaAtividade.objects.exists())
+        resposta = self.client.get(url_lancar, follow=True)
+        self.assertContains(resposta, "está encerrada")
+
+    def test_turma_ativa_mostra_o_lancamento(self):
+        resposta = self.client.get(reverse("escola:turma_relatorio", args=[self.turma_a.pk]), {"obra": "lenda"})
+        self.assertContains(resposta, reverse("escola:atividades_lancar", args=[self.turma_a.pk]))
+        self.assertNotContains(self.client.get(reverse("escola:turma", args=[self.turma_a.pk])), "só consulta")
+
     def test_equipe_administrativa_consulta_no_admin(self):
         from django.contrib.auth.models import Group
 

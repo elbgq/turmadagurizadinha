@@ -51,9 +51,11 @@
             Quiz: {{ detalhe.fizeram }} de {{ total_alunos }} alunos fizeram.
             {% if detalhe.media_primeira is not None %}Média da 1ª tentativa: <strong>{{ detalhe.media_primeira }}%</strong>; da melhor tentativa: {{ detalhe.media_melhor }}%.{% endif %}
         </p>
+        {% if turma.ativa %}
         <p class="escola-acoes relatorio__imprimir">
             <a class="btn btn--ciano btn--pequeno" href="{% url 'escola:atividades_lancar' turma.pk %}?obra={{ obra.slug }}">Lançar atividade complementar</a>
         </p>
+        {% endif %}
 
         <div class="escola-tabela">
         <table class="tabela-gestao">
