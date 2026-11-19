@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Cancioneiro{% endblock %}
+
+{% block content %}
+{# Aba "Cancioneiro" (reunião de 19/11/2026): cards no mesmo molde dos #}
+{# cards de obra da Home; o botão abre o vídeo no YouTube em outra aba. #}
+<h1 class="obras-disponiveis__titulo">Cancioneiro</h1>
+
+{% if perms.cancioneiro.view_musica %}
+    <p><a class="btn" href="{% url 'cancioneiro:gestao_lista' %}">Gerenciar músicas</a></p>
+{% endif %}
+
+<div class="obras-grid">
+    {% for musica in musicas %}
+        <article class="obra-card musica-card">
+            <div class="obra-card__imagem">
+                {% if musica.miniatura_url %}
+                    <img src="{{ musica.miniatura_url }}" alt="Miniatura de {{ musica.titulo }}" loading="lazy">
+                {% endif %}
+            </div>
+            <div class="obra-card__corpo">
+                <h2 class="obra-card__titulo">{{ musica.titulo }}</h2>
+                {% if musica.descricao %}<p class="obra-card__texto">{{ musica.descricao }}</p>{% endif %}
+                <a class="btn btn--ciano obra-card__acessar" href="{{ musica.link_youtube }}"
+                   target="_blank" rel="noopener noreferrer">Ouvir no YouTube</a>
+            </div>
+        </article>
+    {% empty %}
+        <p>Nenhuma música publicada ainda.</p>
+    {% endfor %}
+</div>
+{% endblock %}

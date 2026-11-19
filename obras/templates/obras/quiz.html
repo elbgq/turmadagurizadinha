@@ -14,7 +14,7 @@
         <img class="quiz-cartao__imagem" src="{{ obra.capa.url }}" alt="">
     {% endif %}
     {% if total_perguntas %}
-        <p>{{ total_perguntas }} pergunta{{ total_perguntas|pluralize }} sobre a história. Sem pressa: pensa bem antes de escolher!</p>
+        <p>{{ total_perguntas }} pergunta{{ total_perguntas|pluralize }} sobre essa obra. Sem pressa: pensa bem antes de escolher a alternativa, tchê!</p>
         <form method="post" action="{% url 'quiz:quiz' obra.slug %}" class="obra-quadro__acoes">
             {% csrf_token %}
             <button type="submit" class="btn btn--ciano quiz-botao-grande">INICIAR</button>

@@ -3,26 +3,20 @@
 {% block title %}Entrar{% endblock %}
 
 {% block content %}
-{# Login em duas colunas sobre uma folha de pergaminho (13/11/2026, pedido #}
-{# da cliente). Estilos em .login-pergaminho no base.css. O <svg> abaixo  #}
-{# define o filtro que deixa as bordas da folha irregulares.              #}
-<svg class="login-pergaminho__filtros" width="0" height="0" aria-hidden="true" focusable="false">
-    <filter id="borda-rasgada">
-        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="7" result="ruido"/>
-        <feDisplacementMap in="SourceGraphic" in2="ruido" scale="14"/>
-    </filter>
-</svg>
-
-<section class="login-pergaminho">
-    <div class="login-pergaminho__coluna">
-        <h1 class="login-pergaminho__frase">Tu queres<br><span>conhecer a...</span></h1>
-        <img class="login-pergaminho__figura"
+{# Login no layout base (19/11/2026, pedido da cliente): sem a folha de #}
+{# pergaminho de 13/11/2026; duas molduras lado a lado (.form__secao, como #}
+{# a caixa "Turmas" da escola) — figura à esquerda, formulário à direita. #}
+{# Estilos em .login-quadros no base.css.                                  #}
+<div class="login-quadros">
+    <fieldset class="form__secao login-quadro">
+        <legend class="form__secao-titulo">Para conhecer as nossas obras...</legend>
+        <img class="login-quadro__figura"
              src="{% static 'img/home/turma-personagens.png' %}"
              alt="Personagens da Turma da Gurizadinha com o logotipo">
-    </div>
+    </fieldset>
 
-    <div class="login-pergaminho__coluna login-pergaminho__coluna--direita">
-        <h2 class="login-pergaminho__frase">Então, te aprochega<br><span>e entre!</span></h2>
+    <fieldset class="form__secao login-quadro">
+        <legend class="form__secao-titulo">Te aprochega e entra, vivente!</legend>
 
         <form class="form" method="post" novalidate>
             {% csrf_token %}
@@ -42,10 +36,10 @@
             <button type="submit" class="btn">Entrar</button>
         </form>
 
-        <div class="login-pergaminho__links">
+        <div class="login-quadro__links">
             <p><a href="{% url 'contas:senha_esqueci' %}">Esqueceu a senha?</a></p>
             <p>Ainda não tem conta? As contas são criadas pela equipe da Turma da Gurizadinha. <a href="{% url 'contas:solicitar_acesso' %}">Solicite seu acesso</a>.</p>
         </div>
-    </div>
-</section>
+    </fieldset>
+</div>
 {% endblock %}

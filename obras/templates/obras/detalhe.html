@@ -53,9 +53,12 @@
 {# mesma página. O botão do Quiz só leva à porta de entrada da lógica #}
 {# da Fase 7 (decisão da cliente). #}
 <nav class="obra-navegacao">
-    <a class="obra-navegacao__item" href="{% url 'obras:obra_resumo' obra.slug %}">
-        <span class="obra-navegacao__icone" aria-hidden="true"></span> Resumo
-    </a>
+    {# Resumo só para professor e escola, não para o aluno (19/11/2026). #}
+    {% if pode_ver_resumo %}
+        <a class="obra-navegacao__item" href="{% url 'obras:obra_resumo' obra.slug %}">
+            <span class="obra-navegacao__icone" aria-hidden="true"></span> Resumo
+        </a>
+    {% endif %}
     <a class="obra-navegacao__item" href="{% url 'obras:obra_atividade' obra.slug %}">
         <span class="obra-navegacao__icone" aria-hidden="true"></span> Atividade
     </a>

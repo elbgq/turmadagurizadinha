@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Excluir música{% endblock %}
+
+{% block content %}
+<h1>Excluir música</h1>
+<p>Tem certeza que deseja excluir "<strong>{{ musica.titulo }}</strong>" do Cancioneiro? O vídeo continua no YouTube; só o card sai da plataforma. Essa ação não pode ser desfeita.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--perigo">Sim, excluir</button>
+    <a class="btn btn--ghost" href="{% url 'cancioneiro:gestao_lista' %}">Cancelar</a>
+</form>
+{% endblock %}

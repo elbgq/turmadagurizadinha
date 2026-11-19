@@ -10,17 +10,20 @@
     </p>
     <h1 class="obra-quadro__titulo quiz-cartao__enunciado">{{ pergunta.enunciado }}</h1>
 
-    <ul class="quiz-alternativas quiz-alternativas--resultado">
-        {% for alternativa in pergunta.alternativas.all %}
-            <li class="quiz-alternativa{% if alternativa.correta %} quiz-alternativa--correta{% elif alternativa.pk == escolhida_id %} quiz-alternativa--errada{% endif %}">
-                <span class="quiz-alternativa__letra">{% cycle 'A' 'B' 'C' 'D' 'E' %}</span>
-                <span>
-                    {{ alternativa.texto }}
-                    {% if alternativa.pk == escolhida_id %}<small class="quiz-alternativa__marca">Tua resposta</small>{% endif %}
-                </span>
-            </li>
-        {% endfor %}
-    </ul>
+    <fieldset class="form__secao quiz-alternativas-quadro">
+        <legend class="form__secao-titulo">Alternativas</legend>
+        <ul class="quiz-alternativas quiz-alternativas--resultado">
+            {% for alternativa in pergunta.alternativas.all %}
+                <li class="quiz-alternativa{% if alternativa.correta %} quiz-alternativa--correta{% elif alternativa.pk == escolhida_id %} quiz-alternativa--errada{% endif %}">
+                    <span class="quiz-alternativa__letra">{% cycle 'A' 'B' 'C' 'D' 'E' %}</span>
+                    <span>
+                        {{ alternativa.texto }}
+                        {% if alternativa.pk == escolhida_id %}<small class="quiz-alternativa__marca">Tua resposta</small>{% endif %}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </fieldset>
 
     <div class="quiz-explicacao">{{ pergunta.explicacao|linebreaks }}</div>
 

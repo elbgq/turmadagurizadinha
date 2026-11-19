@@ -541,9 +541,11 @@ a:hover {
    largura 100vw do .divisor-ondulado. */
 .banner-topo__imagem {
     display: block;
-    width: 100vw;
+    /* 100vw → 85vw (reunião de 19/11/2026: "muuuito ampliado"), centralizado
+       e na mesma proporção, sem cortar a arte. */
+    width: 85vw;
     height: auto;
-    margin: -2rem 0 0 calc(50% - 50vw);
+    margin: -2rem 0 0 calc(50% - 42.5vw);
 }
 
 /* Faixa amarela (divisoria.png) entre o banner e "Obras disponíveis",
@@ -1300,7 +1302,9 @@ button.quiz-alternativa:focus-visible {
     padding: 1rem 1.2rem;
     background: var(--cor-fundo);
     border-radius: 10px;
-    text-align: left;
+    /* Justificado (reunião de 19/11/2026). */
+    text-align: justify;
+    hyphens: auto;
     line-height: 1.6;
 }
 
@@ -1323,6 +1327,22 @@ button.quiz-alternativa:focus-visible {
 
 /* Tela final do quiz (Fase 7, etapa 3): acertos + mensagem da faixa
    (texto da cliente) e, para o professor, porcentagem e tempos. */
+/* Moldura das alternativas do quiz (19/11/2026): o .form__secao das
+   caixas da escola; as alternativas ficam no creme para se destacarem. */
+.quiz-alternativas-quadro {
+    text-align: left;
+}
+
+/* Card da faixa de acerto (PNG da cliente, 19/11/2026). */
+.quiz-fim__card {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+    margin: 0 auto 1rem;
+    border-radius: 12px;
+}
+
 .quiz-fim__acertos {
     font-size: 2rem;
     margin: 0 0 0.6rem;
@@ -1455,7 +1475,8 @@ button.quiz-alternativa:focus-visible {
     margin: 0;
 }
 
-.form__secao .form__questao {
+.form__secao .form__questao,
+.form__secao .form__alternativa {
     background: var(--cor-fundo);
     border-color: var(--cor-laranja-apagado);
     margin: 0;
@@ -1662,112 +1683,56 @@ button.quiz-alternativa:focus-visible {
     }
 }
 
-/* Tela de login em duas colunas sobre uma folha de pergaminho
-   (13/11/2026, pedido da cliente). Só usa cores da paleta do manual:
-   o creme no centro da folha, #F6E7C1 e #DDB14F nas beiradas, chumbo e
-   azul-acinzentado nos textos. As bordas irregulares vêm do filtro SVG
-   #borda-rasgada, definido no próprio contas/login.html. */
-.login-pergaminho__filtros {
-    position: absolute;
-}
-
-.login-pergaminho {
-    position: relative;
-    max-width: 1040px;
-    margin: 0.5rem auto;
-    padding: 3rem 3.5rem;
+/* Tela de login (19/11/2026, pedido da cliente): sem a folha de
+   pergaminho, no layout base — duas molduras .form__secao lado a lado
+   (figura | formulário), com o título na própria moldura, como a caixa
+   "Turmas" da escola. Empilha no celular. */
+.login-quadros {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 3.5rem;
-    isolation: isolate;
+    gap: 1.5rem;
+    max-width: 1040px;
+    margin: 0.5rem auto;
 }
 
-/* A folha em si: fica atrás do conteúdo para o filtro não deformar o
-   texto e os campos. */
-.login-pergaminho::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: radial-gradient(ellipse at 50% 45%,
-        var(--cor-fundo) 0%,
-        var(--cor-fundo) 45%,
-        var(--cor-laranja-claro) 75%,
-        var(--cor-laranja-apagado) 115%);
-    border-radius: 6px;
-    filter: url(#borda-rasgada) drop-shadow(0 6px 10px rgba(57, 64, 74, 0.25));
-}
-
-/* Manchas leves de papel antigo. */
-.login-pergaminho::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-        radial-gradient(circle at 12% 18%, rgba(221, 177, 79, 0.18) 0 6%, transparent 14%),
-        radial-gradient(circle at 88% 82%, rgba(221, 177, 79, 0.16) 0 5%, transparent 13%),
-        radial-gradient(circle at 70% 10%, rgba(221, 177, 79, 0.10) 0 4%, transparent 10%);
-    filter: url(#borda-rasgada);
-}
-
-.login-pergaminho__coluna {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.login-quadro {
     justify-content: center;
-    min-width: 0;
 }
 
-/* Coluna do formulário, separada da figura por uma linha tracejada. */
-.login-pergaminho__coluna--direita {
-    align-items: stretch;
-    border-left: 2px dashed var(--cor-laranja-apagado);
-    padding-left: 3.5rem;
-    margin-left: -1.75rem;
+.login-quadro .form__secao-titulo {
+    font-size: 1.8rem;
 }
 
-.login-pergaminho__frase {
-    font-size: 2.6rem;
-    line-height: 1.05;
-    text-align: center;
-    margin: 0 0 1.5rem;
-}
-
-.login-pergaminho__frase span {
-    color: var(--cor-secundaria);
-}
-
-.login-pergaminho__figura {
+.login-quadro__figura {
     display: block;
     width: 100%;
     max-width: 440px;
     height: auto;
+    margin: 0 auto;
 }
 
-.login-pergaminho .form {
+.login-quadro .form {
     max-width: none;
 }
 
-.login-pergaminho .form__campo label {
+.login-quadro .form__campo label {
     font-weight: 600;
 }
 
-.login-pergaminho .form__campo input {
+.login-quadro .form__campo input {
     padding: 0.65rem 0.8rem;
     color: var(--cor-texto);
-    background: rgba(252, 238, 204, 0.85);
+    background: var(--cor-fundo);
     border: 2px solid var(--cor-laranja-apagado);
     border-radius: 10px;
 }
 
-.login-pergaminho .form__campo input:focus {
+.login-quadro .form__campo input:focus {
     outline: none;
     border-color: var(--cor-secundaria);
 }
 
-.login-pergaminho .btn {
+.login-quadro .btn {
     align-self: stretch;
     margin-top: 0.4rem;
     padding: 0.75rem 1.2rem;
@@ -1777,41 +1742,29 @@ button.quiz-alternativa:focus-visible {
     letter-spacing: 0.03em;
 }
 
-.login-pergaminho__links {
-    margin-top: 1.4rem;
+.login-quadro__links {
     font-size: 0.95rem;
     line-height: 1.5;
 }
 
-.login-pergaminho__links p {
+.login-quadro__links p {
     margin: 0.4rem 0;
 }
 
-.login-pergaminho__links a {
+.login-quadro__links a {
     font-weight: 600;
 }
 
-/* Celular: uma coluna, figura em cima e formulário embaixo. */
 @media (max-width: 760px) {
-    .login-pergaminho {
+    .login-quadros {
         grid-template-columns: 1fr;
-        gap: 2rem;
-        padding: 2.2rem 1.6rem;
     }
 
-    .login-pergaminho__coluna--direita {
-        border-left: none;
-        border-top: 2px dashed var(--cor-laranja-apagado);
-        padding-left: 0;
-        margin-left: 0;
-        padding-top: 2rem;
+    .login-quadro .form__secao-titulo {
+        font-size: 1.5rem;
     }
 
-    .login-pergaminho__frase {
-        font-size: 2.1rem;
-    }
-
-    .login-pergaminho__figura {
+    .login-quadro__figura {
         max-width: 300px;
     }
 }

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{% if musica %}Editar música{% else %}Nova música{% endif %}{% endblock %}
+
+{% block content %}
+<h1>{% if musica %}Editar música: {{ musica.titulo }}{% else %}Nova música{% endif %}</h1>
+
+<form class="form form--obra" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {# "Publicada" em destaque no topo, nos moldes da edição de obra #}
+    {# (pedido do Eloi em 19/11/2026; CSS .form__publicacao no base.css). #}
+    <div class="form__publicacao{% if form.publicada.value %} form__publicacao--publicada{% endif %}">
+        <label class="form__publicacao-opcao" for="{{ form.publicada.id_for_label }}">
+            {{ form.publicada }}
+            <span>Publicar esta música</span>
+        </label>
+        <p class="form__publicacao-status">
+            {% if musica %}
+                Situação atual: <strong>{% if musica.publicada %}publicada{% else %}não publicada (rascunho){% endif %}</strong>
+            {% else %}
+                Música nova: começa como <strong>não publicada (rascunho)</strong>, a não ser que você marque acima.
+            {% endif %}
+        </p>
+        <ul class="form__publicacao-efeitos">
+            <li><strong>Marcada:</strong> a música aparece no Cancioneiro para todos os usuários com login (professores e alunos).</li>
+            <li><strong>Desmarcada:</strong> a música fica escondida do Cancioneiro e só aparece aqui, em Gerenciar músicas, para a equipe editorial.</li>
+        </ul>
+        {{ form.publicada.errors }}
+    </div>
+
+    <fieldset class="form__secao">
+        <legend class="form__secao-titulo">Música</legend>
+        {% include "obras/gestao/_campo_obra.html" with field=form.titulo %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.descricao %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.link_youtube %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.imagem %}
+        {% include "obras/gestao/_campo_obra.html" with field=form.ordem %}
+    </fieldset>
+    <p>
+        <button type="submit" class="btn">Salvar</button>
+        <a class="btn btn--ghost" href="{% url 'cancioneiro:gestao_lista' %}">Cancelar</a>
+    </p>
+</form>
+{% endblock %}

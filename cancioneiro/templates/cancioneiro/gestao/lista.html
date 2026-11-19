@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Gerenciar músicas{% endblock %}
+
+{% block content %}
+<h1>Gerenciar músicas</h1>
+
+{% for message in messages %}<p class="mensagem">{{ message }}</p>{% endfor %}
+
+<div class="escola-quadros">
+<fieldset class="form__secao escola-quadro">
+    <legend class="form__secao-titulo">Cancioneiro</legend>
+    <p class="escola-acoes">
+        {% if perms.cancioneiro.add_musica %}
+            <a class="btn" href="{% url 'cancioneiro:musica_nova' %}">+ Nova música</a>
+        {% endif %}
+        <a href="{% url 'cancioneiro:lista' %}">Ver o Cancioneiro</a>
+    </p>
+
+    <div class="escola-tabela">
+        <table class="tabela-gestao">
+            <thead>
+                <tr><th>Título</th><th>Publicada</th><th>Ordem</th><th>Ações</th></tr>
+            </thead>
+            <tbody>
+                {% for musica in musicas %}
+                    <tr>
+                        <td>{{ musica.titulo }}</td>
+                        <td>{% if musica.publicada %}Sim{% else %}Não{% endif %}</td>
+                        <td>{{ musica.ordem }}</td>
+                        <td>
+                            {% if perms.cancioneiro.change_musica %}
+                                <a href="{% url 'cancioneiro:musica_editar' musica.pk %}">Editar</a>
+                            {% endif %}
+                            {% if perms.cancioneiro.delete_musica %}
+                                · <a href="{% url 'cancioneiro:musica_excluir' musica.pk %}">Excluir</a>
+                            {% endif %}
+                            · <a href="{{ musica.link_youtube }}" target="_blank" rel="noopener noreferrer">YouTube</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="4">Nenhuma música cadastrada ainda.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</fieldset>
+</div>
+{% endblock %}

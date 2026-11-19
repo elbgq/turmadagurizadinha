@@ -6,7 +6,13 @@
 {% if turma %}<p>Desmarque "Ativa" para encerrar a turma no fim do ano letivo. Os alunos e o histórico continuam guardados.</p>{% endif %}
 
 <form class="form" method="post" novalidate>
-    {% include "escola/_form_campos.html" %}
+    {# Campos em quadro, no estilo da tela Professores (19/11/2026). #}
+    <div class="escola-quadros">
+    <fieldset class="form__secao escola-quadro">
+        <legend class="form__secao-titulo">Dados da turma</legend>
+        {% include "escola/_form_campos.html" %}
+    </fieldset>
+    </div>
     <button type="submit" class="btn">Salvar</button>
     <a href="{% url 'escola:turmas' %}">Cancelar</a>
 </form>

@@ -11,14 +11,20 @@
     <h1 class="obra-quadro__titulo quiz-cartao__enunciado">{{ pergunta.enunciado }}</h1>
 
     {# Cada alternativa é um botão do mesmo formulário: o clique já responde. #}
-    <form method="post" class="quiz-alternativas">
+    {# Alternativas emolduradas, no mesmo quadro da caixa "Turmas" (19/11/2026). #}
+    <form method="post">
         {% csrf_token %}
-        {% for alternativa in pergunta.alternativas.all %}
-            <button type="submit" name="alternativa" value="{{ alternativa.pk }}" class="quiz-alternativa">
-                <span class="quiz-alternativa__letra">{% cycle 'A' 'B' 'C' 'D' 'E' %}</span>
-                {{ alternativa.texto }}
-            </button>
-        {% endfor %}
+        <fieldset class="form__secao quiz-alternativas-quadro">
+            <legend class="form__secao-titulo">Alternativas</legend>
+            <div class="quiz-alternativas">
+                {% for alternativa in pergunta.alternativas.all %}
+                    <button type="submit" name="alternativa" value="{{ alternativa.pk }}" class="quiz-alternativa">
+                        <span class="quiz-alternativa__letra">{% cycle 'A' 'B' 'C' 'D' 'E' %}</span>
+                        {{ alternativa.texto }}
+                    </button>
+                {% endfor %}
+            </div>
+        </fieldset>
     </form>
 </section>
 {% endblock %}

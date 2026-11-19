@@ -875,3 +875,48 @@ class TelasDaEquipeEditorialEmQuadrosTests(TestCase):
 
     def test_a_turminha_em_quadros(self):
         self._confere_quadros(reverse("obras:a_turminha_editar"), ["Introdução", "Personagens"])
+
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA)
+class ResumoSoParaProfessorEEscolaTests(TestCase):
+    """Reunião de 19/11/2026: o Resumo sai para o aluno (403); os demais veem."""
+
+    def setUp(self):
+        self.obra = Obra.objects.create(
+            titulo="Obra do resumo", slug="obra-do-resumo", publicada=True,
+            topicos_resumo="Tópico do professor.",
+            resumo_pdf=SimpleUploadedFile("r.pdf", b"%PDF-1.4 teste", content_type="application/pdf"),
+        )
+
+    def _usuario(self, tipo, **extra):
+        usuario = User.objects.create_user(f"u-{tipo}", password="senha-teste-123", **extra)
+        usuario.perfil.tipo = tipo
+        usuario.perfil.save()
+        self.client.force_login(usuario)
+        return usuario
+
+    def test_aluno_nao_ve_link_nem_pagina_nem_pdf(self):
+        self._usuario("aluno")
+        detalhe = self.client.get(reverse("obras:detalhe", args=[self.obra.slug]))
+        self.assertNotContains(detalhe, reverse("obras:obra_resumo", args=[self.obra.slug]))
+        self.assertContains(detalhe, reverse("obras:obra_atividade", args=[self.obra.slug]))
+        self.assertEqual(self.client.get(reverse("obras:obra_resumo", args=[self.obra.slug])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("obras:resumo_pdf", args=[self.obra.slug])).status_code, 403)
+
+    def test_demais_tipos_veem_o_resumo(self):
+        for tipo in ("professor", "admin_escola", "outro"):
+            with self.subTest(tipo=tipo):
+                self._usuario(tipo)
+                detalhe = self.client.get(reverse("obras:detalhe", args=[self.obra.slug]))
+                self.assertContains(detalhe, reverse("obras:obra_resumo", args=[self.obra.slug]))
+                resposta = self.client.get(reverse("obras:obra_resumo", args=[self.obra.slug]))
+                self.assertContains(resposta, "Tópico do professor.")
+                pdf = self.client.get(reverse("obras:resumo_pdf", args=[self.obra.slug]))
+                self.assertEqual(pdf.status_code, 200)
+                pdf.close()
+
+    def test_staff_ve_mesmo_com_tipo_aluno(self):
+        self._usuario("aluno", is_staff=True)
+        resposta = self.client.get(reverse("obras:obra_resumo", args=[self.obra.slug]))
+        self.assertEqual(resposta.status_code, 200)

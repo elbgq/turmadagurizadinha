@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import permission_required
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -33,6 +34,17 @@ def _filtrar_obras_por_busca(request, queryset):
         "filtros_ativos": bool(q or categoria),
     }
     return queryset, contexto_busca
+
+
+def pode_ver_resumo(user):
+    """
+    O Resumo é para o professor e a escola (reunião de 19/11/2026): só a
+    conta com Perfil.tipo "aluno" fica de fora. Staff sempre vê.
+    """
+    if user.is_staff:
+        return True
+    perfil = getattr(user, "perfil", None)
+    return not (perfil is not None and perfil.tipo == "aluno")
 
 
 def home(request):
@@ -89,7 +101,11 @@ def detalhe_obra(request, slug):
     termos_glossario = obra.termos_glossario.all()
     return render(
         request, "obras/detalhe.html",
-        {"obra": obra, "termos_glossario": termos_glossario},
+        {
+            "obra": obra,
+            "termos_glossario": termos_glossario,
+            "pode_ver_resumo": pode_ver_resumo(request.user),
+        },
     )
 
 
@@ -113,6 +129,8 @@ def obra_resumo(request, slug):
     em sala de aula, em texto, com um PDF opcional para download
     (acréscimo acordado em reunião com a cliente de 01/10/2026).
     """
+    if not pode_ver_resumo(request.user):
+        raise PermissionDenied
     obra = _obra_visivel_ou_404(slug, request)
     return render(request, "obras/resumo.html", {"obra": obra})
 
@@ -166,8 +184,10 @@ def resumo_pdf(request, slug):
     """
     Download do PDF de "Resumo para o professor" da obra (acréscimo
     acordado em reunião de 01/10/2026) — mesmo padrão de atividade_pdf
-    acima.
+    acima. Aluno não baixa (19/11/2026, ver pode_ver_resumo).
     """
+    if not pode_ver_resumo(request.user):
+        raise PermissionDenied
     obra = _obra_visivel_ou_404(slug, request)
     if not obra.resumo_pdf:
         raise Http404

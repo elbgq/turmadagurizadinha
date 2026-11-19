@@ -8,7 +8,7 @@ from .forms import AlternativaQuizFormSet
 from contas.models import Perfil
 
 from .models import (
-    MENSAGEM_ACIMA_70, MENSAGEM_ATE_50, MENSAGEM_ATE_70, AlternativaQuiz,
+    MENSAGEM_ACIMA_80, MENSAGEM_ATE_50, MENSAGEM_ATE_80, AlternativaQuiz,
     PerguntaQuiz, RespostaQuiz, ResultadoQuiz, formatar_tempo, mensagem_desempenho,
 )
 
@@ -177,6 +177,15 @@ class CadastroPerguntasQuizTests(TestCase):
         self.assertContains(resposta, "de 3 a 5 alternativas")
         self.assertEqual(pergunta.alternativas.count(), 0)
 
+    def test_alternativas_em_quadro(self):
+        # Quadro igual ao das perguntas do quiz (19/11/2026).
+        pergunta = PerguntaQuiz.objects.create(obra=self.obra, enunciado="Pergunta?", explicacao="Explicação.")
+        self.client.force_login(self.editor)
+        resposta = self.client.get(reverse("quiz:pergunta_alternativas", args=[pergunta.pk]))
+        self.assertContains(resposta, '<fieldset class="form__secao">', html=False)
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Alternativas</legend>', html=False)
+        self.assertContains(resposta, 'class="form__alternativa"')
+
     def test_link_na_tela_da_obra(self):
         self.editor.user_permissions.add(*Group.objects.get(name="Equipe editorial").permissions.all())
         self.client.force_login(self.editor)
@@ -295,13 +304,14 @@ class FluxoQuizTests(TestCase):
 
 
 class MensagemDesempenhoTests(TestCase):
-    """Faixas de 29/10/2026: até 50%, acima de 50% até 70%, acima de 70%."""
+    """Faixas de 19/11/2026: até 50%, acima de 50% até 80%, acima de 80%."""
 
     def test_limites_das_faixas(self):
         casos = [
             (0, 6, MENSAGEM_ATE_50), (3, 6, MENSAGEM_ATE_50), (5, 10, MENSAGEM_ATE_50),
-            (3, 5, MENSAGEM_ATE_70), (4, 6, MENSAGEM_ATE_70), (7, 10, MENSAGEM_ATE_70),
-            (3, 4, MENSAGEM_ACIMA_70), (5, 7, MENSAGEM_ACIMA_70), (6, 6, MENSAGEM_ACIMA_70),
+            (3, 5, MENSAGEM_ATE_80), (4, 6, MENSAGEM_ATE_80), (7, 10, MENSAGEM_ATE_80),
+            (3, 4, MENSAGEM_ATE_80), (4, 5, MENSAGEM_ATE_80), (8, 10, MENSAGEM_ATE_80),
+            (9, 10, MENSAGEM_ACIMA_80), (5, 6, MENSAGEM_ACIMA_80), (6, 6, MENSAGEM_ACIMA_80),
         ]
         for acertos, total, esperada in casos:
             with self.subTest(acertos=acertos, total=total):
@@ -396,3 +406,51 @@ class ResultadoGuardaTurmaTests(TestCase):
         self.client.post(reverse("quiz:pergunta", args=[obra.slug, 1]), {"alternativa": alternativas[0].pk})
         self.client.get(reverse("quiz:fim", args=[obra.slug]))
         self.assertEqual(ResultadoQuiz.objects.get().turma, turma)
+
+
+
+class AjustesQuiz19NovTests(TestCase):
+    """Reunião de 19/11/2026: frase de entrada, moldura, "Acertaste" e cards."""
+
+    # Mesmo cenário de ResultadoFinalQuizTests, sem repetir os testes dela.
+    setUp = ResultadoFinalQuizTests.setUp
+    _url = ResultadoFinalQuizTests._url
+    _jogar = ResultadoFinalQuizTests._jogar
+
+    def test_frase_de_entrada(self):
+        self.client.force_login(self.aluno)
+        resposta = self.client.get(reverse("obras:obra_quiz", args=[self.obra.slug]))
+        self.assertContains(
+            resposta, "2 perguntas sobre essa obra. Sem pressa: pensa bem antes de escolher a alternativa, tchê!"
+        )
+
+    def test_mensagem_do_meio_com_acertaste(self):
+        self.assertIn("Acertaste uma boa parte da prosa", MENSAGEM_ATE_80)
+        self.assertNotIn("Acertou", MENSAGEM_ATE_80)
+
+    def test_card_por_faixa(self):
+        casos = [
+            (1, 2, "img/quiz/card-ate-50.png", "Não te atucana, vivente!"),
+            (2, 3, "img/quiz/card-ate-80.png", "Barbaridade!"),
+            (3, 3, "img/quiz/card-acima-80.png", "Fostes bagual, tchê!"),
+        ]
+        for pontuacao, total, imagem, texto in casos:
+            with self.subTest(pontuacao=pontuacao, total=total):
+                resultado = ResultadoQuiz(pontuacao=pontuacao, total=total)
+                self.assertEqual((resultado.card_imagem, resultado.card_texto), (imagem, texto))
+
+    def test_tela_final_mostra_o_card_antes_do_resultado(self):
+        resposta = self._jogar(self.aluno, certas=2)
+        html = resposta.content.decode()
+        self.assertIn("img/quiz/card-acima-80.png", html)
+        self.assertIn("Fostes bagual, tchê!", html)
+        self.assertLess(html.index("card-acima-80.png"), html.index("Tu acertaste"))
+
+    def test_alternativas_emolduradas_na_pergunta_e_na_resposta(self):
+        self.client.force_login(self.aluno)
+        self.client.post(self._url("quiz"))
+        pergunta = self.client.get(self._url("pergunta", 1))
+        self.assertContains(pergunta, '<legend class="form__secao-titulo">Alternativas</legend>', html=False)
+        resposta = self.client.post(self._url("pergunta", 1), {"alternativa": self.alts1[0].pk}, follow=True)
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Alternativas</legend>', html=False)
+        self.assertContains(resposta, "CORRETO")

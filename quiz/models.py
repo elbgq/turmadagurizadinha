@@ -11,37 +11,62 @@ MAX_ALTERNATIVAS = 5
 
 # Mensagens mostradas junto com o número de acertos, ao fim do quiz —
 # texto da cliente, sem alteração (documento de 28/10/2026). Faixas
-# definidas em 29/10/2026: até 50%, acima de 50% até 70%, acima de 70%
-# (o documento fala em "60% a 70%" e "80% a 100%", o que deixaria sem
+# definidas pelo Eloi em 19/11/2026: até 50%, acima de 50% até 80%, acima
+# de 80% (antes: corte em 70%; o documento fala em "60% a 70%" e "80% a
+# 100%", o que deixaria sem
 # mensagem resultados como 55% ou 75%).
 MENSAGEM_ATE_50 = (
     "Bah, vivente! Ainda tem muita coisa boa pra descobrir! Cada pergunta é uma "
     "oportunidade de aprender. Não te atucana, dá mais uma espiada nas histórias e "
     "volta pra peleia. Tu vais longe, tchê!"
 )
-MENSAGEM_ATE_70 = (
-    "Buenas! Tu já estás no rumo certo! Acertou uma boa parte da prosa. Segue "
+MENSAGEM_ATE_80 = (
+    "Buenas! Tu já estás no rumo certo! Acertaste uma boa parte da prosa. Segue "
     "aprendendo, que conhecimento nunca é demais. Bora pra próxima, tchê!"
 )
-MENSAGEM_ACIMA_70 = (
+MENSAGEM_ACIMA_80 = (
     "Mas barbaridade, tchê! Tu deste um show de conhecimento! Tá mais afiado que "
     "faca de gaúcho! Parabéns, vivente! Segue assim, curioso(a) e aprendendo, que "
     "tu é um(a) baita conhecedor(a) da nossa cultura!"
 )
 
 
-def mensagem_desempenho(acertos, total):
+FAIXA_ATE_50 = "ate_50"
+FAIXA_ATE_80 = "ate_80"
+FAIXA_ACIMA_80 = "acima_80"
+
+MENSAGENS_POR_FAIXA = {
+    FAIXA_ATE_50: MENSAGEM_ATE_50,
+    FAIXA_ATE_80: MENSAGEM_ATE_80,
+    FAIXA_ACIMA_80: MENSAGEM_ACIMA_80,
+}
+
+# Cards mostrados antes da frase final (reunião de 19/11/2026, arquivos
+# PNG da cliente em static/img/quiz/): caminho estático e texto do card.
+CARDS_POR_FAIXA = {
+    FAIXA_ATE_50: ("img/quiz/card-ate-50.png", "Não te atucana, vivente!"),
+    FAIXA_ATE_80: ("img/quiz/card-ate-80.png", "Barbaridade!"),
+    FAIXA_ACIMA_80: ("img/quiz/card-acima-80.png", "Fostes bagual, tchê!"),
+}
+
+
+def faixa_desempenho(acertos, total):
     """
-    Mensagem da faixa de acerto. Compara em números inteiros
-    (acertos × 100 contra limite × total) para os limites exatos — 50% e
-    70% — não dependerem de arredondamento: 5 de 10 é "até 50%", 7 de 10
-    é "até 70%".
+    Faixa de acerto. Compara em números inteiros (acertos × 100 contra
+    limite × total) para os limites exatos — 50% e 80% — não dependerem
+    de arredondamento: 5 de 10 é "até 50%", 8 de 10 é "até 80%". Cortes
+    definidos pelo Eloi em 19/11/2026 (antes, o segundo era 70%).
     """
     if acertos * 100 <= 50 * total:
-        return MENSAGEM_ATE_50
-    if acertos * 100 <= 70 * total:
-        return MENSAGEM_ATE_70
-    return MENSAGEM_ACIMA_70
+        return FAIXA_ATE_50
+    if acertos * 100 <= 80 * total:
+        return FAIXA_ATE_80
+    return FAIXA_ACIMA_80
+
+
+def mensagem_desempenho(acertos, total):
+    """Mensagem da faixa de acerto (ver faixa_desempenho)."""
+    return MENSAGENS_POR_FAIXA[faixa_desempenho(acertos, total)]
 
 
 def formatar_tempo(segundos):
@@ -160,8 +185,22 @@ class ResultadoQuiz(models.Model):
         return round(self.pontuacao * 100 / self.total) if self.total else 0
 
     @property
+    def faixa(self):
+        return faixa_desempenho(self.pontuacao, self.total)
+
+    @property
     def mensagem(self):
-        return mensagem_desempenho(self.pontuacao, self.total)
+        return MENSAGENS_POR_FAIXA[self.faixa]
+
+    @property
+    def card_imagem(self):
+        """Caminho estático do card da faixa (para {% static %})."""
+        return CARDS_POR_FAIXA[self.faixa][0]
+
+    @property
+    def card_texto(self):
+        """Texto do card da faixa, usado no alt da imagem."""
+        return CARDS_POR_FAIXA[self.faixa][1]
 
     @property
     def tempo_formatado(self):

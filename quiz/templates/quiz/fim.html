@@ -1,10 +1,14 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Resultado — {{ obra.titulo }}{% endblock %}
 {% block body_class %}pagina-quadro{% endblock %}
 
 {% block content %}
 <section class="obra-glossario obra-quadro quiz-cartao quiz-fim">
     <p class="quiz-cartao__rotulo">{{ obra.titulo }}</p>
+    {# Card da faixa de acerto, antes do resultado e da frase (19/11/2026). #}
+    <img class="quiz-fim__card" src="{% static resultado.card_imagem %}"
+         alt="Card da Turma da Gurizadinha: {{ resultado.card_texto }}">
     <h1 class="obra-quadro__titulo quiz-fim__acertos">Tu acertaste {{ resultado.pontuacao }} de {{ resultado.total }}!</h1>
     <p class="quiz-fim__mensagem">{{ resultado.mensagem }}</p>
 

@@ -921,3 +921,19 @@ class AdminEscolasTests(DuasEscolasMixin, TestCase):
         ids = {int(item["id"]) for item in self.client.get(urls[-1]).json()["results"]}
         self.assertIn(self.aluno_a.perfil.pk, ids)
         self.assertNotIn(self.prof_a.perfil.pk, ids)
+
+
+
+class LoginLayoutBaseTests(TestCase):
+    """Reunião de 19/11/2026: login sem a folha, em duas molduras."""
+
+    def test_login_com_molduras_e_frases_novas(self):
+        resposta = self.client.get(reverse("contas:login"))
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Para conhecer as nossas obras...</legend>', html=False)
+        self.assertContains(resposta, '<legend class="form__secao-titulo">Te aprochega e entra, vivente!</legend>', html=False)
+        self.assertContains(resposta, "turma-personagens.png")
+        self.assertContains(resposta, 'name="username"')
+        self.assertContains(resposta, 'name="password"')
+        self.assertNotContains(resposta, "login-pergaminho")
+        self.assertNotContains(resposta, "borda-rasgada")

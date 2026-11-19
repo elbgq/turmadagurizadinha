@@ -22,6 +22,8 @@ urlpatterns = [
     path("quiz/", include("quiz.urls")),
     # Área da escola: admin da escola e professor (multiescola, 09/11/2026)
     path("escola/", include("escola.urls")),
+    # Cancioneiro: músicas com link para o YouTube (19/11/2026)
+    path("cancioneiro/", include("cancioneiro.urls")),
 ]
 
 # Uploads (media/): servidos pelo próprio Django também em produção. O

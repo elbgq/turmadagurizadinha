@@ -27,6 +27,8 @@
         {% else %}
             <a href="{% url 'obras:obra_lista_publica' %}" class="navbar__link">Lista de obras</a>
         {% endif %}
+        {# Aba "Cancioneiro" (reunião de 19/11/2026), para todos os logados. #}
+        <a href="{% url 'cancioneiro:lista' %}" class="navbar__link">Cancioneiro</a>
     {% endif %}
 
     {# Área da escola (multiescola, 09/11/2026): só para contas de escola. #}

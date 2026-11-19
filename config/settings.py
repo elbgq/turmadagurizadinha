@@ -98,6 +98,7 @@ LOCAL_APPS = [
     "obras",   # Fase 5: Home, Página da Obra, atividades de apoio para impressão (Questao/Alternativa)
     "quiz",    # Fase 7: Módulo de Quiz (temporizador, pontuação, relatório de desempenho)
     "escola",  # Multiescola (09/11/2026): telas do admin da escola e do professor
+    "cancioneiro",  # Reunião de 19/11/2026: músicas (cards com link para o YouTube)
 ]
 
 INSTALLED_APPS = [
